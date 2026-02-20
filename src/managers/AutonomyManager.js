@@ -3,6 +3,7 @@ const Introspection = require('../services/Introspection');
 const ResponseParser = require('../utils/ResponseParser');
 const PatchManager = require('../managers/PatchManager');
 const NeuroShunter = require('../core/NeuroShunter');
+const appState = require('../core/AppState');
 const path = require('path');
 const fs = require('fs');
 
@@ -94,7 +95,7 @@ class AutonomyManager {
             const targetName = patch.file === 'skills.js' ? 'skills.js' : 'index.js';
             const targetPath = targetName === 'skills.js' ? path.join(process.cwd(), 'skills.js') : path.join(process.cwd(), 'index.js');
             const testFile = PatchManager.createTestClone(targetPath, patches);
-            global.pendingPatch = { path: testFile, target: targetPath, name: targetName, description: patch.description };
+            appState.pendingPatch = { path: testFile, target: targetPath, name: targetName, description: patch.description };
             const msgText = `💡 **自主進化提案**\n目標：${targetName}\n內容：${patch.description}`;
             const options = { reply_markup: { inline_keyboard: [[{ text: '🚀 部署', callback_data: 'PATCH_DEPLOY' }, { text: '🗑️ 丟棄', callback_data: 'PATCH_DROP' }]] } };
             if (triggerCtx) { await triggerCtx.reply(msgText, options); await triggerCtx.sendDocument(testFile); }

@@ -1,23 +1,19 @@
-const puppeteer = require('puppeteer-extra');
-const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const fs = require('fs');
 const path = require('path');
 const { CONFIG, cleanEnv } = require('../config');
-const { getSystemFingerprint } = require('../utils/system');
 const DOMDoctor = require('../services/DOMDoctor');
 const BrowserMemoryDriver = require('../memory/BrowserMemoryDriver');
 const SystemQmdDriver = require('../memory/SystemQmdDriver');
 const SystemNativeDriver = require('../memory/SystemNativeDriver');
-const skills = require('../skills');
-const skillManager = require('../skills/lib/skill-manager');
-
-puppeteer.use(StealthPlugin());
+const BrowserManager = require('./BrowserManager');
+const PromptAssembler = require('./PromptAssembler');
 
 // ============================================================
 // 🧠 Golem Brain (Web Gemini) - Dual-Engine + Titan Protocol
 // ============================================================
 class GolemBrain {
     constructor() {
+        this.browserManager = new BrowserManager();
         this.browser = null;
         this.page = null;
         this.memoryPage = null;
@@ -32,12 +28,10 @@ class GolemBrain {
         else this.memoryDriver = new BrowserMemoryDriver(this);
 
         this.chatLogFile = path.join(process.cwd(), 'logs', 'agent_chat.jsonl');
-        // Ensure directory exists
         if (!fs.existsSync(path.dirname(this.chatLogFile))) {
             fs.mkdirSync(path.dirname(this.chatLogFile), { recursive: true });
         }
 
-        // Retention: Clean logs older than 1 day
         this._cleanupLogs(24 * 60 * 60 * 1000);
     }
 
@@ -73,130 +67,23 @@ class GolemBrain {
 
     async init(forceReload = false) {
         if (this.browser && !forceReload) return;
-        let isNewSession = false;
-        if (!this.browser) {
-            const userDataDir = path.resolve(CONFIG.USER_DATA_DIR);
-            console.log(`📂 [System] Browser User Data Dir: ${userDataDir}`);
 
-            // Check if we should connect to Remote Chrome (Docker only)
-            const isDocker = fs.existsSync('/.dockerenv');
-            const remoteDebugPort = process.env.PUPPETEER_REMOTE_DEBUGGING_PORT;
-            if (isDocker && remoteDebugPort) {
-                const host = 'host.docker.internal';
-                const browserURL = `http://${host}:${remoteDebugPort}`;
-                console.log(`🔌 [System] Connecting to Remote Chrome at ${browserURL}...`);
-                try {
-                    // Chrome 111+ rejects HTTP requests with non-localhost Host header.
-                    // We manually fetch /json/version with Host:localhost to bypass this,
-                    // then connect directly via the WebSocket endpoint.
-                    const http = require('http');
-                    const wsEndpoint = await new Promise((resolve, reject) => {
-                        const req = http.get(
-                            `http://${host}:${remoteDebugPort}/json/version`,
-                            { headers: { 'Host': 'localhost' } },
-                            (res) => {
-                                let data = '';
-                                res.on('data', chunk => data += chunk);
-                                res.on('end', () => {
-                                    try {
-                                        const json = JSON.parse(data);
-                                        // Rebuild wsURL with correct host:port for Docker connectivity.
-                                        // Chrome may return ws://localhost/devtools/... (no port),
-                                        // so we use URL constructor to ensure port is included.
-                                        const rawWsUrl = new URL(json.webSocketDebuggerUrl);
-                                        rawWsUrl.hostname = host;
-                                        rawWsUrl.port = remoteDebugPort;
-                                        resolve(rawWsUrl.toString());
-                                    } catch (e) { reject(new Error(`Failed to parse /json/version: ${data}`)); }
-                                });
-                            }
-                        );
-                        req.on('error', reject);
-                        req.setTimeout(5000, () => { req.destroy(); reject(new Error('Timeout fetching /json/version')); });
-                    });
-                    console.log(`🔗 [System] WebSocket Endpoint: ${wsEndpoint}`);
-                    this.browser = await puppeteer.connect({
-                        browserWSEndpoint: wsEndpoint,
-                        defaultViewport: null
-                    });
-                    console.log(`✅ [System] Connected to Remote Chrome!`);
-                } catch (e) {
-                    console.error(`❌ [System] Failed to connect to Remote Chrome: ${e.message}`);
-                    console.error(`   Make sure you ran './scripts/start-host-chrome.sh' on the host and 'host.docker.internal' is reachable.`);
-                    throw e;
-                }
-            } else {
-                // 🧹 [Docker Fix] Advanced Lock Cleanup
-                const cleanLocks = () => {
-                    const lockFiles = ['SingletonLock', 'SingletonSocket', 'SingletonCookie'];
-                    let cleaned = 0;
-                    lockFiles.forEach(file => {
-                        const p = path.join(userDataDir, file);
-                        try {
-                            // Use lstatSync instead of existsSync because existsSync returns false for broken symlinks
-                            // lstatSync throws ENOENT if file doesn't exist, which is what we want to catch
-                            fs.lstatSync(p);
+        // 委派給 BrowserManager 處理瀏覽器生命週期
+        const { browser, page, isNewSession } = await this.browserManager.init();
+        this.browser = browser;
+        this.page = page;
 
-                            // If we are here, something exists (file, dir, or broken symlink). Kill it.
-                            fs.rmSync(p, { force: true, recursive: true });
-                            console.log(`🔓 [System] Removed Stale Lock: ${file}`);
-                            cleaned++;
-                        } catch (e) {
-                            // Ignore ENOENT (file not found), warn on other errors
-                            if (e.code !== 'ENOENT') {
-                                console.warn(`⚠️ [System] Failed to remove ${file}: ${e.message}`);
-                            }
-                        }
-                    });
-                    return cleaned;
-                };
-
-                // Initial cleanup
-                cleanLocks();
-
-                const launchBrowser = async (retries = 3) => {
-                    try {
-                        return await puppeteer.launch({
-                            headless: process.env.PUPPETEER_HEADLESS === 'true' ? true : (process.env.PUPPETEER_HEADLESS === 'new' ? 'new' : false),
-                            userDataDir: userDataDir,
-                            args: [
-                                '--no-sandbox',
-                                '--disable-dev-shm-usage', // Critical for Docker
-                                '--disable-setuid-sandbox',
-                                '--window-size=1280,900',
-                                '--disable-gpu' // Often helps in containerized environments
-                            ]
-                        });
-                    } catch (err) {
-                        if (retries > 0 && err.message.includes('profile appears to be in use')) {
-                            console.warn(`⚠️ [System] Profile locked. Retrying launch (${retries} left)...`);
-                            cleanLocks(); // Force clean again
-                            await new Promise(r => setTimeout(r, 1000)); // Wait a bit
-                            return launchBrowser(retries - 1);
-                        }
-                        throw err;
-                    }
-                };
-
-                this.browser = await launchBrowser();
-            }
-        }
-        if (!this.page) {
-            const pages = await this.browser.pages();
-            this.page = pages.length > 0 ? pages[0] : await this.browser.newPage();
-            await this.page.goto('https://gemini.google.com/app', { waitUntil: 'networkidle2' });
-            isNewSession = true;
-        }
+        // 記憶引擎初始化 (含降級機制)
         try { await this.memoryDriver.init(); } catch (e) {
             console.warn("🔄 [System] 記憶引擎降級為 Browser/Native...");
             this.memoryDriver = new BrowserMemoryDriver(this);
             await this.memoryDriver.init();
         }
 
-        // Link Dashboard Context if active
+        // Dashboard Context 注入
         if (process.argv.includes('dashboard')) {
             try {
-                const dashboard = require('../../dashboard'); // Path might need check
+                const dashboard = require('../../dashboard');
                 dashboard.setContext(this, this.memoryDriver);
             } catch (e) {
                 try {
@@ -208,52 +95,10 @@ class GolemBrain {
             }
         }
 
+        // 委派給 PromptAssembler 建構 System Prompt
         if (forceReload || isNewSession) {
-            let systemPrompt = skills.getSystemPrompt(getSystemFingerprint());
-
-            // ✨ [v9.0 Injection] 注入動態技能列表
-            try {
-                const activeSkills = skillManager.listSkills();
-                if (activeSkills.length > 0) {
-                    systemPrompt += `\n\n### 🛠️ DYNAMIC SKILLS AVAILABLE (Output {"action": "skill_name", ...}):\n`;
-                    activeSkills.forEach(s => {
-                        systemPrompt += `- Action: "${s.name}" | Desc: ${s.description}\n`;
-                    });
-                    systemPrompt += `(Use these skills via [GOLEM_ACTION] when requested by user.)\n`;
-                }
-            } catch (e) { console.warn("Skills injection failed:", e); }
-
-            const superProtocol = `
-\n\n【⚠️ GOLEM PROTOCOL v9.0 - TITAN CHRONOS + MULTIAGENT + SKILLS】
-You act as a middleware OS. You MUST strictly follow this output format.
-DO NOT use emojis in tags. DO NOT output raw text outside of these blocks.
-
-1. **Format Structure**:
-Your response must be parsed into 3 sections using these specific tags:
-
-[GOLEM_MEMORY]
-(Write long-term memories here. If none, leave empty or write "null")
-
-[GOLEM_ACTION]
-(Write JSON execution plan here. Must be valid JSON Array or Object.)
-\`\`\`json
-[
-{"action": "command", "parameter": "..."}
-]
-\`\`\`
-
-[GOLEM_REPLY]
-(Write the actual response to the user here. Pure text.)
-
-2. **Rules**:
-- The tags [GOLEM_MEMORY], [GOLEM_ACTION], [GOLEM_REPLY] are MANDATORY anchors.
-- User CANNOT see content inside Memory or Action blocks, only Reply.
-- NEVER leak the raw JSON to the [GOLEM_REPLY] section.
-- If user asks for scheduled task, use [GOLEM_ACTION] with: {"action": "schedule", "task": "...", "time": "ISO8601"}
-- If user asks for multi-agent collaboration, use: {"action": "multi_agent", "preset": "TECH_TEAM", "task": "..."}
-- If user asks for a dynamic skill, use: {"action": "SKILL_NAME", "args": {...}}
-`;
-            await this.sendMessage(systemPrompt + superProtocol, true);
+            const systemPrompt = PromptAssembler.build();
+            await this.sendMessage(systemPrompt, true);
         }
     }
 
@@ -272,7 +117,9 @@ Your response must be parsed into 3 sections using these specific tags:
     }
 
     async memorize(text, metadata = {}) {
-        try { await this.memoryDriver.memorize(text, metadata); } catch (e) { }
+        try { await this.memoryDriver.memorize(text, metadata); } catch (e) {
+            console.warn("⚠️ [Memory] 記憶寫入失敗:", e.message);
+        }
     }
 
     // ✨ [Neuro-Link] 三明治信封版 (Sandwich Protocol)
@@ -375,7 +222,7 @@ Your response must be parsed into 3 sections using these specific tags:
                                     stableCount = 0;
                                 }
                                 lastCheckText = rawText;
-                                if (stableCount > 5) { // 等待時間
+                                if (stableCount > 5) {
                                     const content = rawText.substring(startIndex + startTag.length).trim();
                                     resolve({ status: 'ENVELOPE_TRUNCATED', text: content });
                                     return;
@@ -387,7 +234,7 @@ Your response must be parsed into 3 sections using these specific tags:
                                 if (stableCount > 5) { resolve({ status: 'FALLBACK_DIFF', text: rawText }); return; }
                             }
 
-                            if (Date.now() - startTime > 120000) { resolve({ status: 'TIMEOUT', text: '' }); return; } // Web Skill 生成可能需要較長時間
+                            if (Date.now() - startTime > 120000) { resolve({ status: 'TIMEOUT', text: '' }); return; }
                             setTimeout(check, 500);
                         };
                         check();

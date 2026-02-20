@@ -1,3 +1,5 @@
+const appState = require('./AppState');
+
 // ============================================================
 // 🎭 InteractiveMultiAgent (v9.0 New Feature)
 // ============================================================
@@ -320,29 +322,26 @@ ${userMessage}
     }
 
     _registerInputListener(chatId, callback) {
-        if (!global.multiAgentListeners) global.multiAgentListeners = new Map();
-        global.multiAgentListeners.set(chatId, callback);
+        appState.multiAgentListeners.set(chatId, callback);
         console.log(`[InteractiveMultiAgent] 監聽器已註冊: ${chatId}`);
     }
 
     _removeInputListener(chatId) {
-        if (global.multiAgentListeners) {
-            global.multiAgentListeners.delete(chatId);
-            console.log(`[InteractiveMultiAgent] 監聽器已移除: ${chatId}`);
-        }
+        appState.multiAgentListeners.delete(chatId);
+        console.log(`[InteractiveMultiAgent] 監聯器已移除: ${chatId}`);
     }
 
     static canResume(chatId) {
-        return global.pausedConversations && global.pausedConversations.has(chatId);
+        return appState.pausedConversations.has(chatId);
     }
 
     static async resumeConversation(ctx, brain) {
-        if (!global.pausedConversations || !global.pausedConversations.has(ctx.chatId)) {
+        if (!appState.pausedConversations.has(ctx.chatId)) {
             await ctx.reply('⚠️ 沒有暫停的會議可以恢復');
             return;
         }
-        const savedConv = global.pausedConversations.get(ctx.chatId);
-        global.pausedConversations.delete(ctx.chatId);
+        const savedConv = appState.pausedConversations.get(ctx.chatId);
+        appState.pausedConversations.delete(ctx.chatId);
         await ctx.reply(
             `▶️ **恢復會議**\n\n` +
             `📋 任務: ${savedConv.task}\n` +
@@ -361,8 +360,7 @@ ${userMessage}
     _cleanup() {
         const conv = this.activeConversation;
         if (conv.status === 'interrupted') {
-            if (!global.pausedConversations) global.pausedConversations = new Map();
-            global.pausedConversations.set(conv.chatId, conv);
+            appState.pausedConversations.set(conv.chatId, conv);
             console.log(`[InteractiveMultiAgent] 會議已暫停並保存: ${conv.chatId}`);
         }
         this._removeInputListener(conv.chatId);
