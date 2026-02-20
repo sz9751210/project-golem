@@ -5,8 +5,17 @@ const skillManager = require('../skills/lib/skill-manager');
 // ============================================================
 // 🧬 NeuroShunter (神經分流中樞 - 核心邏輯層)
 // ============================================================
+const MAX_DISPATCH_DEPTH = 3; // 最大遞迴深度，避免 AI 無限迴圈
+
 class NeuroShunter {
-    static async dispatch(ctx, rawResponse, brain, controller) {
+    static async dispatch(ctx, rawResponse, brain, controller, depth = 0) {
+        // 🛡️ 遞迴深度保護
+        if (depth >= MAX_DISPATCH_DEPTH) {
+            console.warn(`⚠️ [NeuroShunter] 行動鏈深度已達上限 (${MAX_DISPATCH_DEPTH})，中斷遞迴。`);
+            await ctx.reply("⚠️ 行動鏈過長，已自動中斷。如需繼續，請再次下達指令。");
+            return;
+        }
+
         const parsed = ResponseParser.parse(rawResponse);
 
         if (parsed.memory) {
@@ -64,7 +73,7 @@ class NeuroShunter {
                     if (ctx.sendTyping) await ctx.sendTyping();
                     const feedbackPrompt = `[System Observation]\n${observation}\n\nPlease reply to user naturally using [GOLEM_REPLY].`;
                     const finalRes = await brain.sendMessage(feedbackPrompt);
-                    await this.dispatch(ctx, finalRes, brain, controller);
+                    await this.dispatch(ctx, finalRes, brain, controller, depth + 1);
                 }
             }
         }

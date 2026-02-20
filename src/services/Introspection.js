@@ -13,7 +13,7 @@ class Introspection {
     constructor() {
         // 定義忽略清單，避免 AI 讀取到系統垃圾或敏感設定檔
         this.ignoreList = [
-            'node_modules', '.git', '.env', 'package-lock.json', 
+            'node_modules', '.git', '.env', 'package-lock.json',
             '.DS_Store', 'dist', 'coverage'
         ];
     }
@@ -26,14 +26,14 @@ class Introspection {
         try {
             // 定義核心檔案清單 (加入 Executor 以便讓 AI 理解自己的手腳)
             const coreFiles = ['index.js', 'skills.js', 'src/core/Executor.js'];
-            
+
             let combinedSource = "";
 
             for (const file of coreFiles) {
                 const filePath = path.join(process.cwd(), file);
                 try {
                     let content = await fs.readFile(filePath, 'utf-8');
-                    
+
                     // 🛡️ [SECURITY] 動態遮蔽敏感資訊
                     // 防止 AI 在輸出日誌時意外洩漏 API Key
                     content = content
@@ -57,11 +57,11 @@ class Introspection {
      */
     async getStructure(dir = process.cwd(), depth = 2) {
         if (depth < 0) return { type: '...' };
-        
+
         const structure = {};
         try {
             const entries = await fs.readdir(dir, { withFileTypes: true });
-            
+
             for (const entry of entries) {
                 if (this.ignoreList.includes(entry.name)) continue;
 
@@ -82,20 +82,30 @@ class Introspection {
      * @param {string} relativePath 
      */
     async readFile(relativePath) {
-        // 安全性檢查：禁止讀取上一層目錄 (..)
-        if (relativePath.includes('..') || path.isAbsolute(relativePath)) {
-            throw new Error("Access Denied: Illegal path traversal.");
+        // 安全性檢查 1：禁止 null bytes (可繞過字串檢查)
+        if (relativePath.includes('\0')) {
+            throw new Error("Access Denied: Null byte in path.");
         }
 
-        const targetPath = path.join(process.cwd(), relativePath);
-        
-        // 再次檢查是否在忽略清單中
-        if (this.ignoreList.some(ignore => targetPath.includes(ignore))) {
+        // 安全性檢查 2：禁止絕對路徑
+        if (path.isAbsolute(relativePath)) {
+            throw new Error("Access Denied: Absolute paths are not allowed.");
+        }
+
+        // 安全性檢查 3：使用 resolve 驗證最終路徑不超出專案根目錄
+        const projectRoot = process.cwd();
+        const resolved = path.resolve(projectRoot, relativePath);
+        if (!resolved.startsWith(projectRoot + path.sep) && resolved !== projectRoot) {
+            throw new Error("Access Denied: Path escapes project root.");
+        }
+
+        // 安全性檢查 4：檢查是否在忽略清單中
+        if (this.ignoreList.some(ignore => resolved.includes(ignore))) {
             throw new Error("Access Denied: File is in ignore list.");
         }
 
         try {
-            return await fs.readFile(targetPath, 'utf-8');
+            return await fs.readFile(resolved, 'utf-8');
         } catch (e) {
             throw new Error(`File not found: ${relativePath}`);
         }

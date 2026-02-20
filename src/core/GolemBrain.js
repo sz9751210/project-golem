@@ -74,156 +74,209 @@ class GolemBrain {
     async init(forceReload = false) {
         if (this.browser && !forceReload) return;
         let isNewSession = false;
+
+        // 1. 啟動或連接瀏覽器
         if (!this.browser) {
-            const userDataDir = path.resolve(CONFIG.USER_DATA_DIR);
-            console.log(`📂 [System] Browser User Data Dir: ${userDataDir}`);
-
-            // Check if we should connect to Remote Chrome (Docker only)
-            const isDocker = fs.existsSync('/.dockerenv');
-            const remoteDebugPort = process.env.PUPPETEER_REMOTE_DEBUGGING_PORT;
-            if (isDocker && remoteDebugPort) {
-                const host = 'host.docker.internal';
-                const browserURL = `http://${host}:${remoteDebugPort}`;
-                console.log(`🔌 [System] Connecting to Remote Chrome at ${browserURL}...`);
-                try {
-                    // Chrome 111+ rejects HTTP requests with non-localhost Host header.
-                    // We manually fetch /json/version with Host:localhost to bypass this,
-                    // then connect directly via the WebSocket endpoint.
-                    const http = require('http');
-                    const wsEndpoint = await new Promise((resolve, reject) => {
-                        const req = http.get(
-                            `http://${host}:${remoteDebugPort}/json/version`,
-                            { headers: { 'Host': 'localhost' } },
-                            (res) => {
-                                let data = '';
-                                res.on('data', chunk => data += chunk);
-                                res.on('end', () => {
-                                    try {
-                                        const json = JSON.parse(data);
-                                        // Rebuild wsURL with correct host:port for Docker connectivity.
-                                        // Chrome may return ws://localhost/devtools/... (no port),
-                                        // so we use URL constructor to ensure port is included.
-                                        const rawWsUrl = new URL(json.webSocketDebuggerUrl);
-                                        rawWsUrl.hostname = host;
-                                        rawWsUrl.port = remoteDebugPort;
-                                        resolve(rawWsUrl.toString());
-                                    } catch (e) { reject(new Error(`Failed to parse /json/version: ${data}`)); }
-                                });
-                            }
-                        );
-                        req.on('error', reject);
-                        req.setTimeout(5000, () => { req.destroy(); reject(new Error('Timeout fetching /json/version')); });
-                    });
-                    console.log(`🔗 [System] WebSocket Endpoint: ${wsEndpoint}`);
-                    this.browser = await puppeteer.connect({
-                        browserWSEndpoint: wsEndpoint,
-                        defaultViewport: null
-                    });
-                    console.log(`✅ [System] Connected to Remote Chrome!`);
-                } catch (e) {
-                    console.error(`❌ [System] Failed to connect to Remote Chrome: ${e.message}`);
-                    console.error(`   Make sure you ran './scripts/start-host-chrome.sh' on the host and 'host.docker.internal' is reachable.`);
-                    throw e;
-                }
-            } else {
-                // 🧹 [Docker Fix] Advanced Lock Cleanup
-                const cleanLocks = () => {
-                    const lockFiles = ['SingletonLock', 'SingletonSocket', 'SingletonCookie'];
-                    let cleaned = 0;
-                    lockFiles.forEach(file => {
-                        const p = path.join(userDataDir, file);
-                        try {
-                            // Use lstatSync instead of existsSync because existsSync returns false for broken symlinks
-                            // lstatSync throws ENOENT if file doesn't exist, which is what we want to catch
-                            fs.lstatSync(p);
-
-                            // If we are here, something exists (file, dir, or broken symlink). Kill it.
-                            fs.rmSync(p, { force: true, recursive: true });
-                            console.log(`🔓 [System] Removed Stale Lock: ${file}`);
-                            cleaned++;
-                        } catch (e) {
-                            // Ignore ENOENT (file not found), warn on other errors
-                            if (e.code !== 'ENOENT') {
-                                console.warn(`⚠️ [System] Failed to remove ${file}: ${e.message}`);
-                            }
-                        }
-                    });
-                    return cleaned;
-                };
-
-                // Initial cleanup
-                cleanLocks();
-
-                const launchBrowser = async (retries = 3) => {
-                    try {
-                        return await puppeteer.launch({
-                            headless: process.env.PUPPETEER_HEADLESS === 'true' ? true : (process.env.PUPPETEER_HEADLESS === 'new' ? 'new' : false),
-                            userDataDir: userDataDir,
-                            args: [
-                                '--no-sandbox',
-                                '--disable-dev-shm-usage', // Critical for Docker
-                                '--disable-setuid-sandbox',
-                                '--window-size=1280,900',
-                                '--disable-gpu' // Often helps in containerized environments
-                            ]
-                        });
-                    } catch (err) {
-                        if (retries > 0 && err.message.includes('profile appears to be in use')) {
-                            console.warn(`⚠️ [System] Profile locked. Retrying launch (${retries} left)...`);
-                            cleanLocks(); // Force clean again
-                            await new Promise(r => setTimeout(r, 1000)); // Wait a bit
-                            return launchBrowser(retries - 1);
-                        }
-                        throw err;
-                    }
-                };
-
-                this.browser = await launchBrowser();
-            }
+            this.browser = await this._acquireBrowser();
         }
+
+        // 2. 取得頁面
         if (!this.page) {
             const pages = await this.browser.pages();
             this.page = pages.length > 0 ? pages[0] : await this.browser.newPage();
             await this.page.goto('https://gemini.google.com/app', { waitUntil: 'networkidle2' });
             isNewSession = true;
         }
-        try { await this.memoryDriver.init(); } catch (e) {
+
+        // 3. 初始化記憶引擎 (含降級機制)
+        await this._initMemoryDriver();
+
+        // 4. 連接 Dashboard (若啟用)
+        this._linkDashboard();
+
+        // 5. 系統提示詞注入 (首次連線或強制刷新)
+        if (forceReload || isNewSession) {
+            await this._injectSystemPrompt();
+        }
+    }
+
+    // ============================================================
+    // 🔌 Browser Acquisition (瀏覽器取得策略)
+    // ============================================================
+
+    /**
+     * 根據環境決定瀏覽器取得策略：
+     * - Docker + Remote Debug Port → 連接遠端 Chrome
+     * - 其他 → 本地啟動 Chrome
+     */
+    async _acquireBrowser() {
+        const isDocker = fs.existsSync('/.dockerenv');
+        const remoteDebugPort = process.env.PUPPETEER_REMOTE_DEBUGGING_PORT;
+
+        if (isDocker && remoteDebugPort) {
+            return await this._connectRemoteChrome(remoteDebugPort);
+        }
+        return await this._launchLocalBrowser();
+    }
+
+    /**
+     * 連接 Docker 環境中的遠端 Chrome (Host Browser)
+     * Chrome 111+ 會拒絕非 localhost 的 Host header，
+     * 因此手動用 Host:localhost 抓取 /json/version。
+     */
+    async _connectRemoteChrome(remoteDebugPort) {
+        const host = 'host.docker.internal';
+        const browserURL = `http://${host}:${remoteDebugPort}`;
+        console.log(`🔌 [System] Connecting to Remote Chrome at ${browserURL}...`);
+
+        try {
+            const http = require('http');
+            const wsEndpoint = await new Promise((resolve, reject) => {
+                const req = http.get(
+                    `http://${host}:${remoteDebugPort}/json/version`,
+                    { headers: { 'Host': 'localhost' } },
+                    (res) => {
+                        let data = '';
+                        res.on('data', chunk => data += chunk);
+                        res.on('end', () => {
+                            try {
+                                const json = JSON.parse(data);
+                                const rawWsUrl = new URL(json.webSocketDebuggerUrl);
+                                rawWsUrl.hostname = host;
+                                rawWsUrl.port = remoteDebugPort;
+                                resolve(rawWsUrl.toString());
+                            } catch (e) { reject(new Error(`Failed to parse /json/version: ${data}`)); }
+                        });
+                    }
+                );
+                req.on('error', reject);
+                req.setTimeout(5000, () => { req.destroy(); reject(new Error('Timeout fetching /json/version')); });
+            });
+
+            console.log(`🔗 [System] WebSocket Endpoint: ${wsEndpoint}`);
+            const browser = await puppeteer.connect({
+                browserWSEndpoint: wsEndpoint,
+                defaultViewport: null
+            });
+            console.log(`✅ [System] Connected to Remote Chrome!`);
+            return browser;
+        } catch (e) {
+            console.error(`❌ [System] Failed to connect to Remote Chrome: ${e.message}`);
+            console.error(`   Make sure you ran './scripts/start-host-chrome.sh' on the host and 'host.docker.internal' is reachable.`);
+            throw e;
+        }
+    }
+
+    /**
+     * 🧹 清理 Chrome Profile Lock 檔案
+     * 使用 lstatSync 處理 broken symlinks（existsSync 對 broken symlinks 回傳 false）
+     */
+    _cleanLocks(userDataDir) {
+        const lockFiles = ['SingletonLock', 'SingletonSocket', 'SingletonCookie'];
+        let cleaned = 0;
+        lockFiles.forEach(file => {
+            const p = path.join(userDataDir, file);
+            try {
+                fs.lstatSync(p);
+                fs.rmSync(p, { force: true, recursive: true });
+                console.log(`🔓 [System] Removed Stale Lock: ${file}`);
+                cleaned++;
+            } catch (e) {
+                if (e.code !== 'ENOENT') {
+                    console.warn(`⚠️ [System] Failed to remove ${file}: ${e.message}`);
+                }
+            }
+        });
+        return cleaned;
+    }
+
+    /**
+     * 本地啟動 Chrome (含 Lock 清理 + Retry 機制)
+     */
+    async _launchLocalBrowser(retries = 3) {
+        const userDataDir = path.resolve(CONFIG.USER_DATA_DIR);
+        console.log(`📂 [System] Browser User Data Dir: ${userDataDir}`);
+
+        // 先清理一次 Lock
+        this._cleanLocks(userDataDir);
+
+        try {
+            return await puppeteer.launch({
+                headless: process.env.PUPPETEER_HEADLESS === 'true' ? true : (process.env.PUPPETEER_HEADLESS === 'new' ? 'new' : false),
+                userDataDir: userDataDir,
+                args: [
+                    '--no-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--disable-setuid-sandbox',
+                    '--window-size=1280,900',
+                    '--disable-gpu'
+                ]
+            });
+        } catch (err) {
+            if (retries > 0 && err.message.includes('profile appears to be in use')) {
+                console.warn(`⚠️ [System] Profile locked. Retrying launch (${retries} left)...`);
+                this._cleanLocks(userDataDir);
+                await new Promise(r => setTimeout(r, 1000));
+                return this._launchLocalBrowser(retries - 1);
+            }
+            throw err;
+        }
+    }
+
+    // ============================================================
+    // 🧠 Memory & Dashboard Initialization
+    // ============================================================
+
+    /**
+     * 初始化記憶引擎，失敗時自動降級為 BrowserMemoryDriver
+     */
+    async _initMemoryDriver() {
+        try {
+            await this.memoryDriver.init();
+        } catch (e) {
             console.warn("🔄 [System] 記憶引擎降級為 Browser/Native...");
             this.memoryDriver = new BrowserMemoryDriver(this);
             await this.memoryDriver.init();
         }
+    }
 
-        // Link Dashboard Context if active
-        if (process.argv.includes('dashboard')) {
+    /**
+     * 連接 Dashboard Context (若以 dashboard 模式啟動)
+     */
+    _linkDashboard() {
+        if (!process.argv.includes('dashboard')) return;
+        try {
+            const dashboard = require('../../dashboard');
+            dashboard.setContext(this, this.memoryDriver);
+        } catch (e) {
             try {
-                const dashboard = require('../../dashboard'); // Path might need check
+                const dashboard = require('../../dashboard.js');
                 dashboard.setContext(this, this.memoryDriver);
-            } catch (e) {
-                try {
-                    const dashboard = require('../../dashboard.js');
-                    dashboard.setContext(this, this.memoryDriver);
-                } catch (err) {
-                    console.error("Failed to link dashboard context:", err);
-                }
+            } catch (err) {
+                console.error("Failed to link dashboard context:", err);
             }
         }
+    }
 
-        if (forceReload || isNewSession) {
-            let systemPrompt = skills.getSystemPrompt(getSystemFingerprint());
+    /**
+     * 注入系統人格提示詞 + Golem Protocol + 動態技能列表
+     */
+    async _injectSystemPrompt() {
+        let systemPrompt = skills.getSystemPrompt(getSystemFingerprint());
 
-            // ✨ [v9.0 Injection] 注入動態技能列表
-            try {
-                const activeSkills = skillManager.listSkills();
-                if (activeSkills.length > 0) {
-                    systemPrompt += `\n\n### 🛠️ DYNAMIC SKILLS AVAILABLE (Output {"action": "skill_name", ...}):\n`;
-                    activeSkills.forEach(s => {
-                        systemPrompt += `- Action: "${s.name}" | Desc: ${s.description}\n`;
-                    });
-                    systemPrompt += `(Use these skills via [GOLEM_ACTION] when requested by user.)\n`;
-                }
-            } catch (e) { console.warn("Skills injection failed:", e); }
+        // 注入動態技能列表
+        try {
+            const activeSkills = skillManager.listSkills();
+            if (activeSkills.length > 0) {
+                systemPrompt += `\n\n### 🛠️ DYNAMIC SKILLS AVAILABLE (Output {"action": "skill_name", ...}):\n`;
+                activeSkills.forEach(s => {
+                    systemPrompt += `- Action: "${s.name}" | Desc: ${s.description}\n`;
+                });
+                systemPrompt += `(Use these skills via [GOLEM_ACTION] when requested by user.)\n`;
+            }
+        } catch (e) { console.warn("Skills injection failed:", e); }
 
-            const superProtocol = `
+        const superProtocol = `
 \n\n【⚠️ GOLEM PROTOCOL v9.0 - TITAN CHRONOS + MULTIAGENT + SKILLS】
 You act as a middleware OS. You MUST strictly follow this output format.
 DO NOT use emojis in tags. DO NOT output raw text outside of these blocks.
@@ -253,8 +306,7 @@ Your response must be parsed into 3 sections using these specific tags:
 - If user asks for multi-agent collaboration, use: {"action": "multi_agent", "preset": "TECH_TEAM", "task": "..."}
 - If user asks for a dynamic skill, use: {"action": "SKILL_NAME", "args": {...}}
 `;
-            await this.sendMessage(systemPrompt + superProtocol, true);
-        }
+        await this.sendMessage(systemPrompt + superProtocol, true);
     }
 
     async setupCDP() {
