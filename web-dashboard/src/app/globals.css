@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -42,4 +43,19 @@
     body {
         @apply bg-background text-foreground;
     }
+}
+
+/* Virtual Office Custom Styling */
+
+.pixel-font {
+    font-family: 'Press Start 2P', cursive;
+}
+
+/* Fix rendering for blurry pixel art on retina screens */
+canvas,
+img,
+.virtual-office * {
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
 }

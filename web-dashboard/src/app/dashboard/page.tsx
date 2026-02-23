@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { socket } from "@/lib/socket";
 import { MetricCard } from "@/components/MetricCard";
 import { LogStream } from "@/components/LogStream";
-import { Activity, Cpu, Server, Clock } from "lucide-react";
+import { VirtualOffice } from "@/components/VirtualOffice";
+import { Activity, Cpu, Server, Clock, Gamepad2, Terminal } from "lucide-react";
 
 export default function DashboardPage() {
     const [metrics, setMetrics] = useState({
@@ -15,6 +16,7 @@ export default function DashboardPage() {
     });
 
     const [memHistory, setMemHistory] = useState<{ time: string; value: number }[]>([]);
+    const [viewMode, setViewMode] = useState<'classic' | 'game'>('game');
 
     useEffect(() => {
         socket.on("init", (data: any) => {
@@ -74,9 +76,34 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 min-h-0">
-                <div className="md:col-span-2 flex flex-col min-h-0">
-                    <h2 className="text-lg font-semibold mb-2">Live System Logs</h2>
-                    <LogStream className="flex-1" />
+                <div className="md:col-span-2 flex flex-col min-h-0 relative">
+                    <div className="flex justify-between items-center mb-2">
+                        <h2 className="text-lg font-semibold">Live System</h2>
+                        <div className="flex bg-gray-900 rounded-lg p-1 border border-gray-800">
+                            <button
+                                onClick={() => setViewMode('classic')}
+                                className={`px-3 py-1.5 rounded-md flex items-center gap-2 text-sm transition-colors ${viewMode === 'classic' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                            >
+                                <Terminal className="w-4 h-4" />
+                                Console
+                            </button>
+                            <button
+                                onClick={() => setViewMode('game')}
+                                className={`px-3 py-1.5 rounded-md flex items-center gap-2 text-sm transition-colors ${viewMode === 'game' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                            >
+                                <Gamepad2 className="w-4 h-4" />
+                                Office
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="flex-1 relative overflow-hidden rounded-xl">
+                        {viewMode === 'classic' ? (
+                            <LogStream className="absolute inset-0 h-full" />
+                        ) : (
+                            <VirtualOffice />
+                        )}
+                    </div>
                 </div>
                 <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
                     <h2 className="text-lg font-semibold mb-4">System Status</h2>
