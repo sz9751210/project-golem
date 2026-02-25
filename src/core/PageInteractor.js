@@ -69,7 +69,7 @@ class PageInteractor {
 
             // 💡 效能優化：判斷這回合有沒有使用 /@ 擴充功能指令
             const hasExtensionCommand = /\/@(Gmail|Google Calendar|Google Keep|Google Tasks|Google 文件|Google 雲端硬碟|Workspace|YouTube Music|YouTube|Google Maps|Google 航班|Google 飯店|Spotify|Google Home|SynthID)/i.test(payload);
-            
+
             if (hasExtensionCommand) {
                 // 只有呼叫了擴充功能，才需要花 1.5 秒去巡邏有沒有儲存按鈕
                 await this._autoClickWorkspaceButtons();
@@ -92,6 +92,94 @@ class PageInteractor {
             }
             throw e;
         }
+    }
+
+    /**
+     * 檔案上傳核心邏輯 (v9.0.6 強化版)
+     * @param {string} filePath - 本地檔案路徑
+     * @returns {Promise<boolean>} 是否上傳成功
+     */
+    async uploadFile(filePath) {
+        console.log(`📤 [PageInteractor] 準備上傳檔案: ${filePath}`);
+        try {
+            // 1. 尋找隱藏的 file input
+            let fileInput = await this.page.$('input[type="file"]');
+
+            // 2. 如果找不到，嘗試點擊上傳按鈕以觸發 input 生成 (或尋找它)
+            if (!fileInput) {
+                console.log("🔍 [PageInteractor] 嘗試定位上傳按鈕以啟動上傳流程...");
+                const uploadBtnSelectors = [
+                    'button[aria-label*="上傳"]',
+                    'button[aria-label*="Upload"]',
+                    'button:has(mat-icon[data-mat-icon-name="add_circle"])',
+                    'div[role="button"]:has(span:contains("上傳"))'
+                ];
+
+                for (const sel of uploadBtnSelectors) {
+                    const btn = await this.page.$(sel);
+                    if (btn) {
+                        await btn.click();
+                        await new Promise(r => setTimeout(r, 1000));
+                        fileInput = await this.page.$('input[type="file"]');
+                        if (fileInput) break;
+                    }
+                }
+            }
+
+            if (!fileInput) {
+                // 如果還是找不到，使用萬能診斷法
+                const html = await this.page.content();
+                const newSel = await this.doctor.diagnose(html, 'upload_input');
+                if (newSel) {
+                    fileInput = await this.page.$(PageInteractor.cleanSelector(newSel));
+                }
+            }
+
+            if (fileInput) {
+                await fileInput.uploadFile(filePath);
+                console.log("✅ [PageInteractor] 檔案已壓入上傳隊列。");
+                await new Promise(r => setTimeout(r, 2000)); // 等待 UI 預覽生成
+                return true;
+            } else {
+                throw new Error("無法定位 Gemini 的檔案上傳控制項");
+            }
+        } catch (e) {
+            console.error(`❌ [PageInteractor] 上傳失敗: ${e.message}`);
+            return false;
+        }
+    }
+
+    /**
+     * 偵測並捕捉最新下載的檔案
+     * @param {string} downloadPath - 下載目錄
+     * @param {number} timeout - 等待超時
+     * @returns {Promise<string|null>} 下載後的本地路徑
+     */
+    async waitForDownload(downloadPath, timeout = 60000) {
+        console.log(`📥 [PageInteractor] 監控下載目錄: ${downloadPath}...`);
+        const fs = require('fs');
+        const path = require('path');
+
+        const beforeFiles = new Set(fs.readdirSync(downloadPath));
+        const startTime = Date.now();
+
+        while (Date.now() - startTime < timeout) {
+            const currentFiles = fs.readdirSync(downloadPath);
+            const newFiles = currentFiles.filter(f => !beforeFiles.has(f) && !f.endsWith('.crdownload') && !f.endsWith('.tmp'));
+
+            if (newFiles.length > 0) {
+                const newestFile = newFiles.sort((a, b) => {
+                    return fs.statSync(path.join(downloadPath, b)).mtimeMs - fs.statSync(path.join(downloadPath, a)).mtimeMs;
+                })[0];
+
+                console.log(`🎯 [PageInteractor] 捕捉到新檔案: ${newestFile}`);
+                return path.join(downloadPath, newestFile);
+            }
+            await new Promise(r => setTimeout(r, 2000));
+        }
+
+        console.warn("⏳ [PageInteractor] 下載等待超時。");
+        return null;
     }
 
     // ─── Private Methods ─────────────────────────────────────
@@ -126,7 +214,7 @@ class PageInteractor {
             'div[contenteditable="true"]',
             'textarea'
         ];
-        
+
         let targetSelector = inputSelector;
 
         if (!targetSelector || targetSelector.trim() === "") {
@@ -157,12 +245,12 @@ class PageInteractor {
         let textToPaste = text;
 
         if (extMatch) {
-            const originalSlashCommand = extMatch[0]; 
-            const extensionName = extMatch[1];        
-            const summonWord = '@' + extensionName;   
-            
+            const originalSlashCommand = extMatch[0];
+            const extensionName = extMatch[1];
+            const summonWord = '@' + extensionName;
+
             console.log(`🪄 [PageInteractor] 偵測到明確指令 [${originalSlashCommand}]，轉換為 [${summonWord}] 啟動召喚儀式...`);
-            
+
             textToPaste = text.replace(originalSlashCommand, '').trim();
 
             await inputEl.focus();
@@ -171,7 +259,7 @@ class PageInteractor {
             await new Promise(r => setTimeout(r, 1500));
             await this.page.keyboard.press('Enter');
             await new Promise(r => setTimeout(r, 500));
-            
+
             console.log(`✅ [PageInteractor] [${summonWord}] 標籤召喚完成！準備貼上主指令...`);
         }
 
@@ -194,23 +282,23 @@ class PageInteractor {
     async _autoClickWorkspaceButtons() {
         try {
             console.log("🕵️ [PageInteractor] 啟動幽靈掃描，尋找是否需要點擊【儲存/建立】按鈕...");
-            
+
             await new Promise(r => setTimeout(r, 1500));
 
             const clickedButtonText = await this.page.evaluate(() => {
                 const targetKeywords = ['儲存活動', '儲存', '建立', '建立活動', 'Save event', 'Save', 'Create'];
                 const buttons = Array.from(document.querySelectorAll('button, [role="button"], a.btn'));
-                
+
                 for (let i = buttons.length - 1; i >= 0; i--) {
                     const btn = buttons[i];
-                    
+
                     // 🛡️ 防禦 1：禁止觸摸側邊欄 (避開歷史紀錄)
                     if (btn.closest('nav') || btn.closest('aside') || btn.closest('sidenav')) {
                         continue;
                     }
 
                     const text = (btn.innerText || btn.textContent || "").trim();
-                    
+
                     // 🛡️ 防禦 2：長度限制 (按鈕文字通常很短，超過 15 字必定是標題)
                     if (text.length > 15 || text.length === 0) {
                         continue;
@@ -218,7 +306,7 @@ class PageInteractor {
 
                     if (targetKeywords.some(kw => text === kw || text.includes(kw))) {
                         btn.click();
-                        return text; 
+                        return text;
                     }
                 }
                 return null;

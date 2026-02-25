@@ -2,6 +2,7 @@
 // 🧠 Golem Brain (Web Gemini) - Clean Architecture Facade
 // ============================================================
 const path = require('path');
+const fs = require('fs'); // ✨ 修正：補上 fs 取代部分流程中的 fsSync
 const { CONFIG, cleanEnv } = require('../config');
 const DOMDoctor = require('../services/DOMDoctor');
 const BrowserMemoryDriver = require('../memory/BrowserMemoryDriver');
@@ -80,6 +81,22 @@ class GolemBrain {
         if (forceReload || isNewSession) {
             await this._injectSystemPrompt();
         }
+
+        // ✨ 強化：設定下載目錄
+        const downloadPath = path.resolve(process.cwd(), 'downloads');
+        if (!fs.existsSync(downloadPath)) {
+            fs.mkdirSync(downloadPath, { recursive: true });
+        }
+        try {
+            const client = await this.page.target().createCDPSession();
+            await client.send('Page.setDownloadBehavior', {
+                behavior: 'allow',
+                downloadPath: downloadPath,
+            });
+            console.log(`📥 [Brain] 下載目錄已設定: ${downloadPath}`);
+        } catch (e) {
+            console.error("❌ [Brain] 設定下載目錄失敗:", e.message);
+        }
     }
 
     /**
@@ -96,24 +113,18 @@ class GolemBrain {
         }
     }
 
-    // ✨ [新增] 動態視覺腳本：針對新版 UI 切換模型 (支援中英文介面與防呆)
+    // ✨ [新增] 動態視覺腳本：針對新版 UI 切換模型
     async switchModel(targetMode) {
         if (!this.page) throw new Error("大腦尚未啟動。");
         try {
             const result = await this.page.evaluate(async (mode) => {
                 const delay = (ms) => new Promise(r => setTimeout(r, ms));
-
-                // 定義支援的模式及其可能的中英文關鍵字
                 const modeKeywords = {
                     'fast': ['fast', '快捷'],
-                    'thinking': ['thinking', '思考型', '思考'], // 增加容錯率
-                    'pro': ['pro'] // Pro 通常中英文都叫 Pro
+                    'thinking': ['thinking', '思考型', '思考'],
+                    'pro': ['pro']
                 };
-
-                // 取得目標模式的所有關鍵字
                 const targetKeywords = modeKeywords[mode] || [mode];
-
-                // 1. 尋找畫面底部含有目標關鍵字的按鈕 (這可能是展開選單的按鈕)
                 const allKnownKeywords = [...modeKeywords.fast, ...modeKeywords.thinking, ...modeKeywords.pro];
                 const buttons = Array.from(document.querySelectorAll('div[role="button"], button'));
                 let pickerBtn = null;
@@ -122,7 +133,6 @@ class GolemBrain {
                     const txt = (btn.innerText || "").toLowerCase().trim();
                     if (allKnownKeywords.some(k => txt.includes(k.toLowerCase())) && btn.offsetHeight > 10 && btn.offsetHeight < 60) {
                         const rect = btn.getBoundingClientRect();
-                        // 根據截圖，該按鈕位於畫面下半部
                         if (rect.top > window.innerHeight / 2) {
                             pickerBtn = btn;
                             break;
@@ -130,65 +140,40 @@ class GolemBrain {
                     }
                 }
 
-                if (!pickerBtn) return "⚠️ 找不到畫面底部的模型切換按鈕。UI 可能已變更，或您停留在登入畫面。";
+                if (!pickerBtn) return "⚠️ 找不到畫面底部的模型切換按鈕。";
 
-                // ✨ [核心防呆] 檢查按鈕是否為「灰色不可點擊」狀態
-                const isDisabled = pickerBtn.disabled ||
-                    pickerBtn.getAttribute('aria-disabled') === 'true' ||
-                    pickerBtn.classList.contains('disabled');
+                const isDisabled = pickerBtn.disabled || pickerBtn.getAttribute('aria-disabled') === 'true';
+                if (isDisabled) return "⚠️ 模型切換按鈕目前呈現灰色不可點擊狀態。";
 
-                if (isDisabled) {
-                    return "⚠️ 模型切換按鈕目前呈現「灰色不可點擊」狀態！這通常是因為您尚未登入 Google 帳號，或該帳號目前沒有權限切換模型。";
-                }
-
-                // 點擊展開選單
                 pickerBtn.click();
-                await delay(1000); // 等待選單彈出動畫
+                await delay(1000);
 
-                // 2. 尋找選單中對應的目標模式 (比對中英文關鍵字)
                 const items = Array.from(document.querySelectorAll('*'));
                 let targetElement = null;
                 let bestMatch = null;
 
                 for (const el of items) {
-                    // 排除觸發按鈕本身，避免點到自己導致選單關閉
                     if (pickerBtn === el || pickerBtn.contains(el)) continue;
-
-                    // 排除不可見的元素
                     const rect = el.getBoundingClientRect();
                     if (rect.width === 0 || rect.height === 0) continue;
-
                     const txt = (el.innerText || "").trim().toLowerCase();
-
-                    // 【防呆關鍵】如果文字太長，代表它是大容器 (例如整個網頁 background)，絕對不能點擊
                     if (txt.length === 0 || txt.length > 50) continue;
-
-                    // 檢查是否包含目標關鍵字
                     if (targetKeywords.some(keyword => txt.includes(keyword.toLowerCase()))) {
-                        // 優先尋找帶有標準選單屬性的元素
                         const role = el.getAttribute('role');
                         if (role === 'menuitem' || role === 'menuitemradio' || role === 'option') {
                             targetElement = el;
-                            break; // 找到最標準的選項，直接選定中斷
+                            break;
                         }
-
-                        // 否則，尋找最深層的元素 (querySelectorAll 由外而內，最後的通常最深)
                         bestMatch = el;
                     }
                 }
 
-                // 如果找不到標準 role，使用最深層的比對結果
+                if (!targetElement) targetElement = bestMatch;
                 if (!targetElement) {
-                    targetElement = bestMatch;
-                }
-
-                if (!targetElement) {
-                    // 若真的找不到，點擊背景關閉選單避免畫面卡死
                     document.body.click();
-                    return `⚠️ 選單已展開，但找不到對應「${mode}」的選項 (已搜尋關鍵字: ${targetKeywords.join(', ')})。您可能目前無法使用該模型。`;
+                    return `⚠️ 選單已展開，但找不到對應「${mode}」的選項。`;
                 }
 
-                // 點擊目標選項
                 targetElement.click();
                 await delay(800);
                 return `✅ 成功為您點擊並切換至 [${mode}] 模式！`;
@@ -216,7 +201,7 @@ class GolemBrain {
         const endTag = ProtocolFormatter.buildEndTag(reqId);
         const payload = ProtocolFormatter.buildEnvelope(text, reqId);
 
-        console.log(`📡 [Brain] 發送訊號: ${reqId} (含每回合強制洗腦引擎)`);
+        console.log(`📡 [Brain] 發送訊號: ${reqId}`);
 
         const interactor = new PageInteractor(this.page, this.doctor);
 
@@ -225,7 +210,6 @@ class GolemBrain {
                 payload, this.selectors, isSystem, startTag, endTag
             );
         } catch (e) {
-            // 處理 selector 修復觸發的重試
             if (e.message && e.message.startsWith('SELECTOR_HEALED:')) {
                 const [, type, newSelector] = e.message.split(':');
                 this.selectors[type] = newSelector;
@@ -239,46 +223,63 @@ class GolemBrain {
     }
 
     /**
+     * 發送檔案到 Gemini (v9.0.6)
+     * @param {string} filePath - 本地檔案路徑
+     * @param {string} [text] - 隨附文字
+     * @returns {Promise<string>} AI 回應
+     */
+    async sendFile(filePath, text = "") {
+        if (!this.browser) await this.init();
+        try { await this.page.bringToFront(); } catch (e) { }
+
+        const interactor = new PageInteractor(this.page, this.doctor);
+        const uploadSuccess = await interactor.uploadFile(filePath);
+
+        if (!uploadSuccess) {
+            throw new Error("檔案上傳失敗。");
+        }
+
+        return this.sendMessage(text || "請分析此檔案。");
+    }
+
+    /**
+     * 等待並獲取最新下載的檔案 (v9.0.6)
+     * @returns {Promise<string|null>} 檔案路徑
+     */
+    async waitForDownload() {
+        const downloadPath = path.resolve(process.cwd(), 'downloads');
+        const interactor = new PageInteractor(this.page, this.doctor);
+        return interactor.waitForDownload(downloadPath);
+    }
+
+    /**
      * 從記憶中回憶相關內容
-     * @param {string} queryText - 查詢文字
-     * @returns {Promise<Array>}
      */
     async recall(queryText) {
         if (!queryText) return [];
         try { return await this.memoryDriver.recall(queryText); } catch (e) { return []; }
     }
 
-    /**
-     * 將內容存入長期記憶
-     * @param {string} text - 要記憶的文字
-     * @param {Object} [metadata={}] - 附加 metadata
-     */
     async memorize(text, metadata = {}) {
         try { await this.memoryDriver.memorize(text, metadata); } catch (e) { }
     }
 
-    /**
-     * 附加對話日誌
-     * @param {Object} entry - 日誌紀錄
-     */
     _appendChatLog(entry) {
         this.chatLogManager.append(entry);
     }
 
     // ─── Private Methods ─────────────────────────────────────
 
-    /** 初始化記憶引擎，失敗時降級 */
     async _initMemoryDriver() {
         try {
             await this.memoryDriver.init();
         } catch (e) {
-            console.warn("🔄 [System] 記憶引擎降級為 Browser/Native...");
+            console.warn("🔄 [System] 記憶引擎降級...");
             this.memoryDriver = new BrowserMemoryDriver(this);
             await this.memoryDriver.init();
         }
     }
 
-    /** 連結 Dashboard (若以 dashboard 模式啟動) */
     _linkDashboard() {
         if (!process.argv.includes('dashboard')) return;
         try {
@@ -288,21 +289,15 @@ class GolemBrain {
             try {
                 const dashboard = require('../../dashboard.js');
                 dashboard.setContext(this, this.memoryDriver);
-            } catch (err) {
-                console.error("Failed to link dashboard context:", err);
-            }
+            } catch (err) { }
         }
     }
 
-    /** 組裝並發送系統 Prompt */
     async _injectSystemPrompt() {
         const { systemPrompt, skillMemoryText } = ProtocolFormatter.buildSystemPrompt();
-
         if (skillMemoryText) {
             await this.memorize(skillMemoryText, { type: 'system_skills', source: 'boot_init' });
-            console.log(`🧠 [Memory] 已成功將技能載入長期記憶中！`);
         }
-
         await this.sendMessage(systemPrompt, true);
     }
 }

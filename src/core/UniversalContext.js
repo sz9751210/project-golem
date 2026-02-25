@@ -1,5 +1,8 @@
 const { CONFIG } = require('../config');
 const MessageManager = require('./MessageManager');
+const fs = require('fs');
+const path = require('path');
+const axios = require('axios');
 
 // ============================================================
 // 🔌 Universal Context (通用語境層)
@@ -31,21 +34,63 @@ class UniversalContext {
             const msg = this.event;
             let fileId = null;
             let mimeType = 'image/jpeg';
-            if (msg.photo) fileId = msg.photo[msg.photo.length - 1].file_id;
-            else if (msg.document) {
+            let fileName = 'upload.jpg';
+
+            if (msg.photo) {
+                fileId = msg.photo[msg.photo.length - 1].file_id;
+            } else if (msg.document) {
                 fileId = msg.document.file_id;
                 mimeType = msg.document.mime_type;
+                fileName = msg.document.file_name || 'document';
+            } else if (msg.video) {
+                fileId = msg.video.file_id;
+                mimeType = msg.video.mime_type;
+                fileName = msg.video.file_name || 'video.mp4';
+            } else if (msg.audio) {
+                fileId = msg.audio.file_id;
+                mimeType = msg.audio.mime_type;
+                fileName = msg.audio.file_name || 'audio.mp3';
             }
+
             if (fileId) {
                 try {
                     const file = await this.instance.getFile(fileId);
-                    return { url: `https://api.telegram.org/file/bot${CONFIG.TG_TOKEN}/${file.file_path}`, mimeType: mimeType };
+                    const fileUrl = `https://api.telegram.org/file/bot${CONFIG.TG_TOKEN}/${file.file_path}`;
+
+                    // ✨ 核心強化：下載檔案至本地，以便上傳至 Gemini Web
+                    const tempDir = path.join(process.cwd(), 'temp_uploads');
+                    if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
+
+                    const localFilePath = path.join(tempDir, `${Date.now()}_${fileName}`);
+                    const response = await axios({
+                        url: fileUrl,
+                        method: 'GET',
+                        responseType: 'stream'
+                    });
+
+                    await new Promise((resolve, reject) => {
+                        const writer = fs.createWriteStream(localFilePath);
+                        response.data.pipe(writer);
+                        writer.on('finish', resolve);
+                        writer.on('error', reject);
+                    });
+
+                    return {
+                        url: fileUrl,
+                        mimeType: mimeType,
+                        localPath: localFilePath,
+                        fileName: fileName
+                    };
                 } catch (e) { console.error("TG File Error:", e); }
             }
         } else {
             const attachment = this.event.attachments && this.event.attachments.first();
             if (attachment) {
-                return { url: attachment.url, mimeType: attachment.contentType || 'application/octet-stream' };
+                return {
+                    url: attachment.url,
+                    mimeType: attachment.contentType || 'application/octet-stream',
+                    fileName: attachment.name
+                };
             }
         }
         return null;
@@ -74,7 +119,7 @@ class UniversalContext {
                 }
             }
         }
-        
+
         // ✨ [V9.0.2 修正] Telegram Topic (Forum) 支援
         let sendOptions = options || {};
         if (this.platform === 'telegram') {
@@ -83,7 +128,7 @@ class UniversalContext {
                 sendOptions = { ...sendOptions, message_thread_id: threadId };
             }
         }
-        
+
         return await MessageManager.send(this, content, sendOptions);
     }
 

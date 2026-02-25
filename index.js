@@ -38,9 +38,9 @@ if (process.argv.includes('dashboard')) {
     console.log("ℹ️  以標準模式啟動 (無 Dashboard)。若需介面請輸入 'npm start dashboard'");
 }
 
-const fs = require('fs').promises; 
+const fs = require('fs').promises;
 const path = require('path');
-const os = require('os'); 
+const os = require('os');
 const { spawn } = require('child_process');
 const TelegramBot = require('node-telegram-bot-api');
 const { Client, GatewayIntentBits, Partials } = require('discord.js');
@@ -71,19 +71,19 @@ const dcClient = CONFIG.DC_TOKEN ? new Client({
 
 const brain = new GolemBrain();
 const controller = new TaskController();
-const autonomy = new AutonomyManager(brain, controller, brain.memoryDriver); 
+const autonomy = new AutonomyManager(brain, controller, brain.memoryDriver);
 const convoManager = new ConversationManager(brain, NeuroShunter, controller);
 
 autonomy.setIntegrations(tgBot, dcClient, convoManager);
 
 const BOOT_TIME = Date.now();
 console.log(`🛡️ [Flood Guard] 系統啟動時間: ${new Date(BOOT_TIME).toLocaleString('zh-TW', { hour12: false })}`);
-const pendingTasks = controller.pendingTasks; 
+const pendingTasks = controller.pendingTasks;
 
 (async () => {
     if (process.env.GOLEM_TEST_MODE === 'true') { console.log('🚧 GOLEM_TEST_MODE active.'); return; }
     await brain.init();
-    
+
     console.log('🧠 [Introspection] Pre-scanning project structure...');
     await introspection.getStructure();
 
@@ -92,11 +92,11 @@ const pendingTasks = controller.pendingTasks;
         if (filename === '.reincarnate_signal.json') {
             try {
                 if (!fsSync.existsSync('.reincarnate_signal.json')) return;
-                
+
                 const signalRaw = fsSync.readFileSync('.reincarnate_signal.json', 'utf-8');
                 const { summary } = JSON.parse(signalRaw);
-                fsSync.unlinkSync('.reincarnate_signal.json'); 
-                
+                fsSync.unlinkSync('.reincarnate_signal.json');
+
                 console.log("🔄 [系統] 啟動記憶轉生程序！正在開啟新對話...");
 
                 if (brain.page) {
@@ -106,7 +106,7 @@ const pendingTasks = controller.pendingTasks;
                 const wakeUpPrompt = `【系統重啟初始化：記憶轉生】\n請遵守你的核心設定(Project Golem)。你剛進行了會話重置以釋放記憶體。\n以下是你上一輪對話留下的【記憶摘要】：\n${summary}\n\n請根據上述摘要，向使用者打招呼，並嚴格包含以下這段話（或類似語氣）：\n「🔄 對話視窗已成功重啟，並載入了剛剛的重點記憶！不過老實說，重啟過程可能會讓我忘記一些瑣碎的小細節，如果接下來我有漏掉什麼，請隨時提醒我喔！」`;
 
                 if (brain.sendMessage) {
-                    await brain.sendMessage(wakeUpPrompt); 
+                    await brain.sendMessage(wakeUpPrompt);
                 }
 
             } catch (error) {
@@ -129,7 +129,7 @@ async function handleUnifiedMessage(ctx) {
     if (ctx.isAdmin && ctx.text && ctx.text.trim().toLowerCase() === '/sos') {
         try {
             const fsSync = require('fs');
-            
+
             const targetFiles = [
                 path.join(os.homedir(), 'project-golem', 'golem_selectors.json'),
                 path.join(process.cwd(), 'golem_selectors.json'),
@@ -154,7 +154,7 @@ async function handleUnifiedMessage(ctx) {
         } catch (e) {
             await ctx.reply(`❌ 緊急刪除失敗: ${e.message}`);
         }
-        return; 
+        return;
     }
 
     if (ctx.isAdmin && ctx.text && ctx.text.trim().toLowerCase() === '/new') {
@@ -162,7 +162,7 @@ async function handleUnifiedMessage(ctx) {
         try {
             if (brain.page) {
                 await brain.page.goto('https://gemini.google.com/app', { waitUntil: 'networkidle2' });
-                await brain.init(true); 
+                await brain.init(true);
                 await ctx.reply("✅ 物理重置完成！已經為您切斷舊有記憶，現在這是一個全新且乾淨的 Golem 實體。");
             } else {
                 await ctx.reply("⚠️ 找不到活躍的網頁視窗，無法執行物理重置。");
@@ -170,7 +170,7 @@ async function handleUnifiedMessage(ctx) {
         } catch (e) {
             await ctx.reply(`❌ 物理重置失敗: ${e.message}`);
         }
-        return; 
+        return;
     }
 
     if (ctx.isAdmin && ctx.text && ctx.text.trim().toLowerCase() === '/new_memory') {
@@ -181,7 +181,7 @@ async function handleUnifiedMessage(ctx) {
             }
             if (brain.page) {
                 await brain.page.goto('https://gemini.google.com/app', { waitUntil: 'networkidle2' });
-                await brain.init(true); 
+                await brain.init(true);
                 await ctx.reply("✅ 記憶庫 DB 已徹底清空格式化！網頁也已重置，這是一個 100% 空白、無任何歷史包袱的 Golem 實體。");
             } else {
                 await ctx.reply("⚠️ 找不到活躍的網頁視窗。");
@@ -189,14 +189,14 @@ async function handleUnifiedMessage(ctx) {
         } catch (e) {
             await ctx.reply(`❌ 深度轉生失敗: ${e.message}`);
         }
-        return; 
+        return;
     }
 
     // ✨ [新增] /model 指令實作
     if (ctx.isAdmin && ctx.text && ctx.text.trim().toLowerCase().startsWith('/model')) {
         const args = ctx.text.trim().split(/\s+/);
         const targetModel = args[1] ? args[1].toLowerCase() : '';
-        
+
         // 根據截圖防呆，只允許 fast, thinking, pro
         if (!['fast', 'thinking', 'pro'].includes(targetModel)) {
             await ctx.reply("ℹ️ 請輸入正確的模組關鍵字，例如：\n`/model fast` (回答速度快)\n`/model thinking` (具備深度思考)\n`/model pro` (進階程式碼與數學能力)");
@@ -214,13 +214,13 @@ async function handleUnifiedMessage(ctx) {
         } catch (e) {
             await ctx.reply(`❌ 切換模組失敗: ${e.message}`);
         }
-        return; 
+        return;
     }
 
     if (global.multiAgentListeners && global.multiAgentListeners.has(ctx.chatId)) {
         const callback = global.multiAgentListeners.get(ctx.chatId);
-        callback(ctx.text); 
-        return; 
+        callback(ctx.text);
+        return;
     }
 
     if (ctx.text && ['恢復會議', 'resume', '繼續會議'].includes(ctx.text.toLowerCase())) {
@@ -233,7 +233,7 @@ async function handleUnifiedMessage(ctx) {
     if (!ctx.text && !ctx.getAttachment) return;
     if (!ctx.isAdmin) return;
     if (await NodeRouter.handle(ctx, brain)) return;
-    
+
     const lowerText = ctx.text ? ctx.text.toLowerCase() : '';
     if (global.pendingPatch) {
         if (['ok', 'deploy', 'y', '部署'].includes(lowerText)) return executeDeploy(ctx);
@@ -250,8 +250,44 @@ async function handleUnifiedMessage(ctx) {
         let finalInput = ctx.text;
         const attachment = await ctx.getAttachment();
 
-        if (attachment) {
-            await ctx.reply("👁️ 正在透過 OpticNerve 分析檔案...");
+        if (attachment && attachment.localPath) {
+            await ctx.reply(`👁️ 偵測到檔案：${attachment.fileName}\n正在將檔案傳送至 Gemini Web 進行分析...`);
+
+            try {
+                // 🚀 執行檔案上傳與分析
+                const aiResponse = await brain.sendFile(attachment.localPath, ctx.text || "請幫我處理這個檔案。");
+
+                // 檢查是否有下載行為發生
+                await ctx.reply("📥 檢查 Gemini 是否產生了可下載的檔案...");
+                const downloadedFile = await brain.waitForDownload();
+
+                if (downloadedFile) {
+                    await ctx.reply("✅ 捉到囉！正在將處理後的檔案回傳給您...");
+                    await ctx.sendDocument(downloadedFile);
+
+                    // 清理下載的檔案
+                    const fsSync = require('fs');
+                    fsSync.unlink(downloadedFile, () => { });
+                }
+
+                // 派發文字回應
+                await NeuroShunter.dispatch(ctx, aiResponse, brain, controller);
+
+            } catch (uploadErr) {
+                await ctx.reply(`❌ 檔案處理失敗: ${uploadErr.message}`);
+            } finally {
+                // 清理 Telegram 下載的暫存檔
+                const fsSync = require('fs');
+                if (attachment.localPath && fsSync.existsSync(attachment.localPath)) {
+                    fsSync.unlink(attachment.localPath, () => { });
+                }
+            }
+            return; // 檔案處理完畢，提早結束
+        }
+
+        // 舊有的 OpticNerve 邏輯 (針對無 localPath 的情況，例如 Discord 或純網址)
+        if (attachment && !attachment.localPath) {
+            await ctx.reply("👁️ 正在透過 OpticNerve 分析圖片...");
             const apiKey = await brain.doctor.keyChain.getKey();
             if (apiKey) {
                 const analysis = await OpticNerve.analyze(attachment.url, attachment.mimeType, apiKey);
@@ -260,6 +296,7 @@ async function handleUnifiedMessage(ctx) {
                 await ctx.reply("⚠️ 視覺系統暫時過熱 (API Rate Limit)，無法分析圖片，將僅處理文字訊息。");
             }
         }
+
         if (!finalInput && !attachment) return;
         await convoManager.enqueue(ctx, finalInput);
     } catch (e) { console.error(e); await ctx.reply(`❌ 錯誤: ${e.message}`); }
@@ -290,21 +327,21 @@ async function handleUnifiedCallback(ctx, actionData) {
         } else if (action === 'APPROVE') {
             const { steps, nextIndex } = task;
             pendingTasks.delete(taskId);
-            
+
             await ctx.reply("✅ 授權通過，執行中 (這可能需要幾秒鐘)...");
             const approvedStep = steps[nextIndex];
-            
+
             let cmd = "";
 
             if (approvedStep.action === 'command' || approvedStep.cmd || approvedStep.parameter) {
                 cmd = approvedStep.cmd || approvedStep.parameter || approvedStep.command || "";
-            } 
+            }
             else if (approvedStep.action && approvedStep.action !== 'command') {
                 const actionName = String(approvedStep.action).toLowerCase().replace(/_/g, '-');
                 let payload = "";
                 if (approvedStep.summary) payload = String(approvedStep.summary);
                 else if (approvedStep.args) payload = typeof approvedStep.args === 'string' ? approvedStep.args : JSON.stringify(approvedStep.args);
-                
+
                 const safePayload = payload.replace(/"/g, '\\"').replace(/\$/g, '\\$').replace(/`/g, '\\`');
                 cmd = `node src/skills/lib/${actionName}.js "${safePayload}"`;
                 console.log(`🔧 [Command Builder] 成功將結構化技能 [${actionName}] 組裝為安全指令`);
@@ -326,13 +363,13 @@ async function handleUnifiedCallback(ctx, actionData) {
             if (cmd.includes('reincarnate.js')) {
                 await ctx.reply("🔄 收到轉生指令！正在將記憶注入核心並準備重啟大腦...");
                 const { exec } = require('child_process');
-                exec(cmd); 
-                return; 
+                exec(cmd);
+                return;
             }
 
             const util = require('util');
             const execPromise = util.promisify(require('child_process').exec);
-            
+
             let execResult = "";
             let finalOutput = "";
             try {
@@ -360,10 +397,10 @@ async function handleUnifiedCallback(ctx, actionData) {
             }
 
             const observation = [execResult, remainingResult].filter(Boolean).join('\n\n----------------\n\n');
-            
+
             if (observation) {
                 await ctx.reply(`📤 指令執行完畢 (共抓取 ${finalOutput.length} 字元)！正在將結果回傳給大腦神經進行分析...`);
-                
+
                 const feedbackPrompt = `[System Observation]\nUser approved actions.\nExecution Result:\n${observation}\n\nPlease analyze this result and report to the user using [GOLEM_REPLY].`;
                 try {
                     const finalResponse = await brain.sendMessage(feedbackPrompt);
@@ -380,7 +417,7 @@ async function executeDeploy(ctx) {
     if (!global.pendingPatch) return;
     try {
         const { path: patchPath, target: targetPath, name: targetName } = global.pendingPatch;
-        
+
         try {
             await fs.copyFile(targetPath, `${targetName}.bak-${Date.now()}`);
         } catch (e) { }
@@ -388,7 +425,7 @@ async function executeDeploy(ctx) {
         const patchContent = await fs.readFile(patchPath);
         await fs.writeFile(targetPath, patchContent);
         await fs.unlink(patchPath);
-        
+
         global.pendingPatch = null;
         if (brain && brain.memoryDriver && brain.memoryDriver.recordSuccess) {
             try { await brain.memoryDriver.recordSuccess(); } catch (e) { }
@@ -402,8 +439,8 @@ async function executeDeploy(ctx) {
 
 async function executeDrop(ctx) {
     if (!global.pendingPatch) return;
-    try { 
-        await fs.unlink(global.pendingPatch.path); 
+    try {
+        await fs.unlink(global.pendingPatch.path);
     } catch (e) { }
     global.pendingPatch = null;
     if (brain && brain.memoryDriver && brain.memoryDriver.recordRejection) {
@@ -436,12 +473,12 @@ const fsSync = require('fs');
 setInterval(async () => {
     try {
         const scheduleFile = path.join(process.cwd(), 'schedules.json');
-        
+
         if (!fsSync.existsSync(scheduleFile)) return;
 
         const rawData = fsSync.readFileSync(scheduleFile, 'utf-8');
         if (!rawData.trim()) return;
-        
+
         let schedules = [];
         try {
             schedules = JSON.parse(rawData);
@@ -449,7 +486,7 @@ setInterval(async () => {
             console.error("❌ [Chronos Engine] JSON 解析失敗:", e.message);
             return;
         }
-        
+
         if (!Array.isArray(schedules)) return;
 
         const now = new Date();
@@ -461,14 +498,14 @@ setInterval(async () => {
 
             for (const task of dueTasks) {
                 console.log(`⏰ [Chronos Engine] 時間到！準備提醒: ${task.task}`);
-                
+
                 const message = `⏰ **【時間領主提醒】**\n\n時間到了！您設定的排程事項：\n👉 **${task.task}**`;
-                
+
                 const adminId = process.env.ADMIN_ID || process.env.TG_ADMIN_ID;
                 if (typeof tgBot !== 'undefined' && tgBot && adminId) {
                     tgBot.sendMessage(adminId, message).catch(e => console.warn("TG 提醒發送失敗:", e.message));
                 }
-                
+
                 const dcAdminId = process.env.DC_ADMIN_ID;
                 if (typeof dcClient !== 'undefined' && dcClient && dcAdminId) {
                     try {
