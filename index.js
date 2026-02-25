@@ -343,7 +343,7 @@ async function handleUnifiedCallback(ctx, actionData) {
                 else if (approvedStep.args) payload = typeof approvedStep.args === 'string' ? approvedStep.args : JSON.stringify(approvedStep.args);
 
                 const safePayload = payload.replace(/"/g, '\\"').replace(/\$/g, '\\$').replace(/`/g, '\\`');
-                cmd = `node src/skills/lib/${actionName}.js "${safePayload}"`;
+                cmd = `node src/skills/core/${actionName}.js "${safePayload}"`;
                 console.log(`🔧 [Command Builder] 成功將結構化技能 [${actionName}] 組裝為安全指令`);
             }
 

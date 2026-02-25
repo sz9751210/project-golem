@@ -10,7 +10,7 @@ const SystemQmdDriver = require('../memory/SystemQmdDriver');
 const SystemNativeDriver = require('../memory/SystemNativeDriver');
 
 const BrowserLauncher = require('./BrowserLauncher');
-const ProtocolFormatter = require('./ProtocolFormatter');
+const ProtocolFormatter = require('../services/ProtocolFormatter');
 const PageInteractor = require('./PageInteractor');
 const ChatLogManager = require('../managers/ChatLogManager');
 const { URLS } = require('./constants');
@@ -79,7 +79,7 @@ class GolemBrain {
 
         // 5. 新會話: 注入系統 Prompt
         if (forceReload || isNewSession) {
-            await this._injectSystemPrompt();
+            await this._injectSystemPrompt(forceReload);
         }
 
         // ✨ 強化：設定下載目錄
@@ -293,13 +293,21 @@ class GolemBrain {
         }
     }
 
-    async _injectSystemPrompt() {
-        const { systemPrompt, skillMemoryText } = ProtocolFormatter.buildSystemPrompt();
+    /**
+     * 組裝並發送系統 Prompt
+     * @param {boolean} [forceRefresh=false]
+     */
+    async _injectSystemPrompt(forceRefresh = false) {
+        const { systemPrompt, skillMemoryText } = await ProtocolFormatter.buildSystemPrompt(forceRefresh);
+
         if (skillMemoryText) {
             await this.memorize(skillMemoryText, { type: 'system_skills', source: 'boot_init' });
         }
-        await this.sendMessage(systemPrompt, true);
+
+        const compressedPrompt = ProtocolFormatter.compress(systemPrompt);
+        await this.sendMessage(compressedPrompt, true);
     }
+}
 }
 
 module.exports = GolemBrain;
