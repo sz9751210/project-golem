@@ -1,6 +1,8 @@
 // ============================================================
-// 🎯 PageInteractor - Gemini 頁面 DOM 互動引擎 (抗 UI 改版強化版 v9.0.5)
+z// 🎯 PageInteractor - Gemini 頁面 DOM 互動引擎 (抗 UI 改版強化版 v9.0.6)
 // ============================================================
+const fs = require('fs');
+const path = require('path');
 const { TIMINGS, LIMITS } = require('./constants');
 const ResponseExtractor = require('./ResponseExtractor');
 
@@ -97,89 +99,355 @@ class PageInteractor {
     /**
      * 檔案上傳核心邏輯 (v9.0.6 強化版)
      * @param {string} filePath - 本地檔案路徑
+     * @param {number} [maxRetries=2] - 最大重試次數
      * @returns {Promise<boolean>} 是否上傳成功
      */
-    async uploadFile(filePath) {
+    async uploadFile(filePath, maxRetries = 2) {
         console.log(`📤 [PageInteractor] 準備上傳檔案: ${filePath}`);
-        try {
-            // 1. 尋找隱藏的 file input
-            let fileInput = await this.page.$('input[type="file"]');
 
-            // 2. 如果找不到，嘗試點擊上傳按鈕以觸發 input 生成 (或尋找它)
-            if (!fileInput) {
-                console.log("🔍 [PageInteractor] 嘗試定位上傳按鈕以啟動上傳流程...");
-                const uploadBtnSelectors = [
-                    'button[aria-label*="上傳"]',
-                    'button[aria-label*="Upload"]',
-                    'button:has(mat-icon[data-mat-icon-name="add_circle"])',
-                    'div[role="button"]:has(span:contains("上傳"))'
-                ];
-
-                for (const sel of uploadBtnSelectors) {
-                    const btn = await this.page.$(sel);
-                    if (btn) {
-                        await btn.click();
-                        await new Promise(r => setTimeout(r, 1000));
-                        fileInput = await this.page.$('input[type="file"]');
-                        if (fileInput) break;
-                    }
-                }
-            }
-
-            if (!fileInput) {
-                // 如果還是找不到，使用萬能診斷法
-                const html = await this.page.content();
-                const newSel = await this.doctor.diagnose(html, 'upload_input');
-                if (newSel) {
-                    fileInput = await this.page.$(PageInteractor.cleanSelector(newSel));
-                }
-            }
-
-            if (fileInput) {
-                await fileInput.uploadFile(filePath);
-                console.log("✅ [PageInteractor] 檔案已壓入上傳隊列。");
-                await new Promise(r => setTimeout(r, 2000)); // 等待 UI 預覽生成
-                return true;
-            } else {
-                throw new Error("無法定位 Gemini 的檔案上傳控制項");
-            }
-        } catch (e) {
-            console.error(`❌ [PageInteractor] 上傳失敗: ${e.message}`);
+        // 0. 前置驗證：檔案是否存在且可讀
+        if (!fs.existsSync(filePath)) {
+            console.error(`❌ [PageInteractor] 檔案不存在: ${filePath}`);
             return false;
         }
+        const stats = fs.statSync(filePath);
+        console.log(`📊 [PageInteractor] 檔案大小: ${(stats.size / 1024).toFixed(1)} KB`);
+
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+            if (attempt > 0) {
+                console.log(`🔄 [PageInteractor] 上傳重試 (${attempt}/${maxRetries})...`);
+                await new Promise(r => setTimeout(r, 2000));
+            }
+            try {
+                const success = await this._attemptUpload(filePath);
+                if (success) return true;
+            } catch (e) {
+                console.warn(`⚠️ [PageInteractor] 上傳嘗試 ${attempt + 1} 失敗: ${e.message}`);
+            }
+        }
+
+        console.error(`❌ [PageInteractor] 上傳完全失敗 (已重試 ${maxRetries} 次)`);
+        return false;
     }
 
     /**
-     * 偵測並捕捉最新下載的檔案
-     * @param {string} downloadPath - 下載目錄
-     * @param {number} timeout - 等待超時
-     * @returns {Promise<string|null>} 下載後的本地路徑
+     * 單次上傳嘗試
+     * @param {string} filePath
+     * @returns {Promise<boolean>}
+     * @private
      */
-    async waitForDownload(downloadPath, timeout = 60000) {
-        console.log(`📥 [PageInteractor] 監控下載目錄: ${downloadPath}...`);
-        const fs = require('fs');
-        const path = require('path');
+    async _attemptUpload(filePath) {
+        // 1. 直接尋找隱藏的 file input (最快路徑)
+        let fileInput = await this.page.$('input[type="file"]');
 
-        const beforeFiles = new Set(fs.readdirSync(downloadPath));
-        const startTime = Date.now();
+        // 2. 如果找不到，嘗試點擊上傳按鈕以觸發 input 生成
+        if (!fileInput) {
+            console.log("🔍 [PageInteractor] 嘗試定位上傳按鈕...");
+            // 🎯 優先度排序：根據實際 Gemini Web DOM 結構 (2025)
+            const uploadBtnSelectors = [
+                // ===== 最高優先：Gemini 2025 UI 確認的 + 按鈕 =====
+                'button.upload-card-button',
+                'button[aria-label*="上傳檔案選單"]',
+                'button[aria-label*="upload file menu"]',
+                // ===== 次優先：通用上傳/附件按鈕 =====
+                'button[aria-label*="上傳"]',
+                'button[aria-label*="Upload"]',
+                'button[aria-label*="附加"]',
+                'button[aria-label*="Attach"]',
+                'button[aria-label*="Add file"]',
+                'button[aria-label*="新增檔案"]',
+                // ===== 低優先：Material Icon 按鈕 =====
+                'button:has(mat-icon[data-mat-icon-name="add_circle"])',
+                'button:has(mat-icon[data-mat-icon-name="attach_file"])',
+                'button:has(mat-icon[data-mat-icon-name="add"])',
+            ];
 
-        while (Date.now() - startTime < timeout) {
-            const currentFiles = fs.readdirSync(downloadPath);
-            const newFiles = currentFiles.filter(f => !beforeFiles.has(f) && !f.endsWith('.crdownload') && !f.endsWith('.tmp'));
+            for (const sel of uploadBtnSelectors) {
+                try {
+                    const btn = await this.page.$(sel);
+                    if (btn) {
+                        console.log(`🎯 [PageInteractor] 找到上傳按鈕: ${sel}`);
+                        await btn.click();
+                        await new Promise(r => setTimeout(r, 1500));
 
-            if (newFiles.length > 0) {
-                const newestFile = newFiles.sort((a, b) => {
-                    return fs.statSync(path.join(downloadPath, b)).mtimeMs - fs.statSync(path.join(downloadPath, a)).mtimeMs;
-                })[0];
+                        // 先檢查是否直接出現了 file input（有些 UI 版本跳過選單）
+                        fileInput = await this.page.$('input[type="file"]');
+                        if (fileInput) break;
 
-                console.log(`🎯 [PageInteractor] 捕捉到新檔案: ${newestFile}`);
-                return path.join(downloadPath, newestFile);
+                        // 點擊 + 按鈕後出現的選單（mat-menu / popup / dropdown）
+                        console.log("🔍 [PageInteractor] 搜尋上傳子選單...");
+                        const menuItemSelectors = [
+                            // Angular Material mat-menu
+                            'button[mat-menu-item]',
+                            'a[mat-menu-item]',
+                            'mat-menu-item',
+                            '[role="menuitem"]',
+                            // 通用 popup / overlay 選項
+                            '.cdk-overlay-pane button',
+                            '.cdk-overlay-pane [role="menuitem"]',
+                            '.cdk-overlay-pane a',
+                            '.mat-mdc-menu-panel button',
+                            // 任何彈窗中的可點擊項
+                            '.mdc-menu-surface button',
+                            '.mdc-menu-surface [role="menuitem"]',
+                        ];
+
+                        let menuClicked = false;
+                        for (const menuSel of menuItemSelectors) {
+                            const items = await this.page.$$(menuSel);
+                            for (const item of items) {
+                                const itemInfo = await item.evaluate(el => ({
+                                    text: (el.innerText || el.textContent || '').trim(),
+                                    visible: el.offsetHeight > 0
+                                }));
+                                if (!itemInfo.visible || itemInfo.text.length === 0 || itemInfo.text.length > 30) continue;
+
+                                // 匹配「上傳檔案」「從電腦上傳」「Upload file」等
+                                if (/上傳|Upload|我的電腦|from computer|local file/i.test(itemInfo.text)) {
+                                    console.log(`📁 [PageInteractor] 點擊選單項: "${itemInfo.text}"`);
+                                    await item.click();
+                                    await new Promise(r => setTimeout(r, 1500));
+                                    menuClicked = true;
+                                    break;
+                                }
+                            }
+                            if (menuClicked) break;
+                        }
+
+                        // 如果選單沒找到匹配項，嘗試點擊選單中第一個可見項（通常就是本地上傳）
+                        if (!menuClicked) {
+                            const firstItem = await this.page.$('.cdk-overlay-pane button, .cdk-overlay-pane [role="menuitem"], .mat-mdc-menu-panel button');
+                            if (firstItem) {
+                                const text = await firstItem.evaluate(el => (el.innerText || '').trim());
+                                console.log(`📁 [PageInteractor] 點擊選單第一項: "${text}"`);
+                                await firstItem.click();
+                                await new Promise(r => setTimeout(r, 1500));
+                            }
+                        }
+
+                        fileInput = await this.page.$('input[type="file"]');
+                        if (fileInput) break;
+                    }
+                } catch (e) {
+                    // 單個選擇器失敗不中斷迴圈
+                }
             }
-            await new Promise(r => setTimeout(r, 2000));
         }
 
-        console.warn("⏳ [PageInteractor] 下載等待超時。");
-        return null;
+        // 3. 最終防線：DOM Doctor 萬能診斷
+        if (!fileInput) {
+            console.log("🩺 [PageInteractor] 啟動 DOM Doctor 診斷上傳控制項...");
+            const html = await this.page.content();
+            const newSel = await this.doctor.diagnose(html, 'upload_input');
+            if (newSel) {
+                fileInput = await this.page.$(PageInteractor.cleanSelector(newSel));
+            }
+        }
+
+        if (!fileInput) {
+            throw new Error("無法定位 Gemini 的檔案上傳控制項");
+        }
+
+        // 4. 執行上傳
+        await fileInput.uploadFile(filePath);
+        console.log("⏳ [PageInteractor] 檔案已壓入上傳隊列，等待 UI 確認...");
+
+        // 5. 等待上傳完成確認 (觀察 DOM 中是否出現檔案預覽)
+        const uploadConfirmed = await this._waitForUploadConfirmation();
+        if (uploadConfirmed) {
+            console.log("✅ [PageInteractor] 檔案上傳已確認 (UI 預覽已生成)。");
+        } else {
+            console.log("✅ [PageInteractor] 檔案已壓入上傳隊列 (無法確認預覽，但已送出)。");
+        }
+        return true;
+    }
+
+    /**
+     * 等待上傳完成的 UI 確認
+     * @param {number} [timeout=8000]
+     * @returns {Promise<boolean>}
+     * @private
+     */
+    async _waitForUploadConfirmation(timeout = 8000) {
+        const start = Date.now();
+        while (Date.now() - start < timeout) {
+            const hasPreview = await this.page.evaluate(() => {
+                // 常見的 Gemini 檔案預覽標識
+                const indicators = [
+                    '[data-file-name]',
+                    '.file-preview',
+                    '.attachment-preview',
+                    'img[alt*="preview"]',
+                    '.upload-chip',
+                    '.file-chip',
+                    // Gemini 的檔案 chip 通常在輸入框區域內
+                    '.input-area-container [class*="chip"]',
+                    '.input-area-container [class*="file"]',
+                ];
+                return indicators.some(sel => document.querySelector(sel) !== null);
+            });
+            if (hasPreview) return true;
+            await new Promise(r => setTimeout(r, 500));
+        }
+        return false;
+    }
+
+    /**
+     * 偵測並捕捉最新下載的檔案 (v9.0.6 事件驅動版)
+     * @param {string} downloadPath - 下載目錄
+     * @param {number} timeout - 等待超時（毫秒）
+     * @param {function} [onProgress] - 進度回報 callback(message)
+     * @returns {Promise<string|null>} 下載後的本地路徑
+     */
+    async waitForDownload(downloadPath, timeout = 60000, onProgress = null) {
+        console.log(`📥 [PageInteractor] 監控下載目錄: ${downloadPath}...`);
+
+        if (!fs.existsSync(downloadPath)) {
+            fs.mkdirSync(downloadPath, { recursive: true });
+        }
+
+        const beforeFiles = new Set(fs.readdirSync(downloadPath));
+
+        return new Promise((resolve) => {
+            let watcher = null;
+            let pollTimer = null;
+            let timeoutTimer = null;
+            let resolved = false;
+
+            const cleanup = () => {
+                if (resolved) return;
+                resolved = true;
+                if (watcher) { try { watcher.close(); } catch (e) { } }
+                if (pollTimer) clearInterval(pollTimer);
+                if (timeoutTimer) clearTimeout(timeoutTimer);
+            };
+
+            /**
+             * 檢查新檔案（排除暫存檔），並等待 .crdownload 完成
+             */
+            const checkForNewFiles = async () => {
+                try {
+                    const currentFiles = fs.readdirSync(downloadPath);
+
+                    // 偵測 .crdownload 檔案 - 表示有下載正在進行
+                    const downloading = currentFiles.filter(f =>
+                        !beforeFiles.has(f) && (f.endsWith('.crdownload') || f.endsWith('.tmp'))
+                    );
+                    if (downloading.length > 0 && onProgress) {
+                        onProgress(`⏬ 下載進行中... (${downloading[0]})`);
+                    }
+
+                    // 檢查已完成的新檔案
+                    const completedFiles = currentFiles.filter(f =>
+                        !beforeFiles.has(f) && !f.endsWith('.crdownload') && !f.endsWith('.tmp')
+                    );
+
+                    if (completedFiles.length > 0) {
+                        const newestFile = completedFiles.sort((a, b) => {
+                            return fs.statSync(path.join(downloadPath, b)).mtimeMs
+                                - fs.statSync(path.join(downloadPath, a)).mtimeMs;
+                        })[0];
+
+                        // 再等 500ms 確認檔案寫入完成
+                        await new Promise(r => setTimeout(r, 500));
+
+                        console.log(`🎯 [PageInteractor] 捕捉到新檔案: ${newestFile}`);
+                        if (onProgress) onProgress(`✅ 已捕捉到檔案: ${newestFile}`);
+                        cleanup();
+                        resolve(path.join(downloadPath, newestFile));
+                        return true;
+                    }
+                } catch (e) {
+                    console.warn(`⚠️ [PageInteractor] 下載偵測異常: ${e.message}`);
+                }
+                return false;
+            };
+
+            // 策略 1: fs.watch 事件驅動 (快速回應)
+            try {
+                watcher = fs.watch(downloadPath, async (eventType, filename) => {
+                    if (resolved) return;
+                    if (eventType === 'rename' || eventType === 'change') {
+                        await checkForNewFiles();
+                    }
+                });
+            } catch (e) {
+                console.warn(`⚠️ [PageInteractor] fs.watch 不可用，退化為輪詢模式: ${e.message}`);
+            }
+
+            // 策略 2: 定期輪詢作為備用 (每 2 秒)
+            pollTimer = setInterval(async () => {
+                if (resolved) return;
+                await checkForNewFiles();
+            }, 2000);
+
+            // 超時清理
+            timeoutTimer = setTimeout(() => {
+                if (!resolved) {
+                    console.warn("⏳ [PageInteractor] 下載等待超時。");
+                    if (onProgress) onProgress("⏳ 下載等待超時，Gemini 可能未產生檔案。");
+                    cleanup();
+                    resolve(null);
+                }
+            }, timeout);
+        });
+    }
+
+    /**
+     * 嘗試在 Gemini 頁面上主動點擊下載按鈕 (Canvas / Code Block 場景)
+     * @returns {Promise<boolean>} 是否成功觸發下載
+     */
+    async triggerDownloadButton() {
+        console.log("🔍 [PageInteractor] 搜尋 Gemini 頁面上的下載按鈕...");
+        try {
+            const clicked = await this.page.evaluate(() => {
+                const downloadKeywords = ['下載', 'Download', 'Export', '匯出', '儲存檔案', 'Save file'];
+                // 搜尋所有可點擊元素
+                const clickables = Array.from(document.querySelectorAll(
+                    'button, [role="button"], a[download], a[href*="download"]'
+                ));
+
+                // 從後往前搜尋（最新的回應通常在底部）
+                for (let i = clickables.length - 1; i >= 0; i--) {
+                    const el = clickables[i];
+                    // 跳過導航區域的按鈕
+                    if (el.closest('nav') || el.closest('aside')) continue;
+
+                    const text = (el.innerText || el.textContent || '').trim();
+                    const ariaLabel = el.getAttribute('aria-label') || '';
+                    const combined = `${text} ${ariaLabel}`;
+
+                    if (downloadKeywords.some(kw => combined.includes(kw)) && combined.length < 30) {
+                        el.click();
+                        return combined.trim();
+                    }
+                }
+
+                // 嘗試 Canvas 區域的下載圖標
+                const canvasDownload = document.querySelector(
+                    'canvas-container button[aria-label*="download"], ' +
+                    'canvas-container button[aria-label*="下載"], ' +
+                    '.canvas-actions button[data-action="download"]'
+                );
+                if (canvasDownload) {
+                    canvasDownload.click();
+                    return 'Canvas Download';
+                }
+
+                return null;
+            });
+
+            if (clicked) {
+                console.log(`🎯 [PageInteractor] 已觸發下載按鈕: "${clicked}"`);
+                await new Promise(r => setTimeout(r, 2000));
+                return true;
+            }
+            console.log("👻 [PageInteractor] 未發現可點擊的下載按鈕。");
+            return false;
+        } catch (e) {
+            console.warn(`⚠️ [PageInteractor] 下載按鈕搜尋異常: ${e.message}`);
+            return false;
+        }
     }
 
     // ─── Private Methods ─────────────────────────────────────

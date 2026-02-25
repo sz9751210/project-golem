@@ -223,7 +223,7 @@ class GolemBrain {
     }
 
     /**
-     * 發送檔案到 Gemini (v9.0.6)
+     * 發送檔案到 Gemini (v9.0.6 強化版)
      * @param {string} filePath - 本地檔案路徑
      * @param {string} [text] - 隨附文字
      * @returns {Promise<string>} AI 回應
@@ -231,6 +231,14 @@ class GolemBrain {
     async sendFile(filePath, text = "") {
         if (!this.browser) await this.init();
         try { await this.page.bringToFront(); } catch (e) { }
+
+        // 前置驗證
+        if (!fs.existsSync(filePath)) {
+            throw new Error(`檔案不存在: ${filePath}`);
+        }
+        const stats = fs.statSync(filePath);
+        const sizeKB = (stats.size / 1024).toFixed(1);
+        console.log(`📄 [Brain] 準備上傳檔案: ${path.basename(filePath)} (${sizeKB} KB)`);
 
         const interactor = new PageInteractor(this.page, this.doctor);
         const uploadSuccess = await interactor.uploadFile(filePath);
@@ -243,13 +251,27 @@ class GolemBrain {
     }
 
     /**
-     * 等待並獲取最新下載的檔案 (v9.0.6)
+     * 等待並獲取最新下載的檔案 (v9.0.6 強化版)
+     * @param {Object} [options] - 選項
+     * @param {number} [options.timeout=30000] - 等待超時（毫秒）
+     * @param {function} [options.onProgress] - 進度回報 callback
+     * @param {boolean} [options.tryClickDownload=true] - 是否主動搜尋下載按鈕
      * @returns {Promise<string|null>} 檔案路徑
      */
-    async waitForDownload() {
+    async waitForDownload({ timeout = 30000, onProgress = null, tryClickDownload = true } = {}) {
         const downloadPath = path.resolve(process.cwd(), 'downloads');
         const interactor = new PageInteractor(this.page, this.doctor);
-        return interactor.waitForDownload(downloadPath);
+
+        // 策略 1: 嘗試主動點擊頁面上的下載按鈕 (Canvas / Code Block 場景)
+        if (tryClickDownload) {
+            const triggered = await interactor.triggerDownloadButton();
+            if (triggered && onProgress) {
+                onProgress('🖱️ 已點擊下載按鈕，等待檔案...');
+            }
+        }
+
+        // 策略 2: 監控 downloads 目錄
+        return interactor.waitForDownload(downloadPath, timeout, onProgress);
     }
 
     /**
@@ -307,7 +329,6 @@ class GolemBrain {
         const compressedPrompt = ProtocolFormatter.compress(systemPrompt);
         await this.sendMessage(compressedPrompt, true);
     }
-}
 }
 
 module.exports = GolemBrain;

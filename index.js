@@ -251,16 +251,39 @@ async function handleUnifiedMessage(ctx) {
         const attachment = await ctx.getAttachment();
 
         if (attachment && attachment.localPath) {
-            await ctx.reply(`👁️ 偵測到檔案：${attachment.fileName}\n正在將檔案傳送至 Gemini Web 進行分析...`);
+            const fileSizeKB = (() => {
+                try { return (require('fs').statSync(attachment.localPath).size / 1024).toFixed(1); } catch (e) { return '?'; }
+            })();
+            await ctx.reply(`📎 偵測到檔案：**${attachment.fileName}** (${fileSizeKB} KB)\n⏳ 正在將檔案傳送至 Gemini Web 進行處理...`);
 
             try {
-                // 🚀 執行檔案上傳與分析
-                const aiResponse = await brain.sendFile(attachment.localPath, ctx.text || "請幫我處理這個檔案。");
+                // 🚀 Phase 1: 上傳檔案並等待 AI 回應
+                const userPrompt = ctx.text || "請幫我處理這個檔案。";
+                const aiResponse = await brain.sendFile(attachment.localPath, userPrompt);
 
-                // 檢查是否有下載行為發生
-                await ctx.reply("📥 檢查 Gemini 是否產生了可下載的檔案...");
-                const downloadedFile = await brain.waitForDownload();
+                // 🔍 Phase 2: 智慧偵測是否有下載檔案產生
+                // 分析 AI 回應中是否暗示有檔案可下載
+                const downloadHints = /下載|download|export|匯出|產生.*檔|生成.*檔|建立.*檔|created.*file|saved|已儲存/i;
+                const shouldCheckDownload = downloadHints.test(aiResponse);
 
+                let downloadedFile = null;
+                if (shouldCheckDownload) {
+                    await ctx.reply("📥 Gemini 似乎產生了檔案，正在搜尋並下載...");
+                    downloadedFile = await brain.waitForDownload({
+                        timeout: 30000,
+                        onProgress: async (msg) => {
+                            try { await ctx.reply(msg); } catch (e) { }
+                        },
+                    });
+                } else {
+                    // 即使沒有明確暗示，也快速掃描一下 (短超時)
+                    downloadedFile = await brain.waitForDownload({
+                        timeout: 10000,
+                        tryClickDownload: true,
+                    });
+                }
+
+                // 📤 Phase 3: 回傳檔案到 Telegram
                 if (downloadedFile) {
                     await ctx.reply("✅ 捉到囉！正在將處理後的檔案回傳給您...");
                     await ctx.sendDocument(downloadedFile);
@@ -270,11 +293,12 @@ async function handleUnifiedMessage(ctx) {
                     fsSync.unlink(downloadedFile, () => { });
                 }
 
-                // 派發文字回應
+                // 💬 Phase 4: 派發文字回應
                 await NeuroShunter.dispatch(ctx, aiResponse, brain, controller);
 
             } catch (uploadErr) {
-                await ctx.reply(`❌ 檔案處理失敗: ${uploadErr.message}`);
+                console.error(`❌ [FileFlow] 檔案處理管線異常:`, uploadErr);
+                await ctx.reply(`❌ 檔案處理失敗: ${uploadErr.message}\n\n💡 小提示：\n• 確認 Gemini Web 頁面已正常載入\n• 嘗試 /sos 重置選擇器快取\n• 嘗試 /new 重置對話`);
             } finally {
                 // 清理 Telegram 下載的暫存檔
                 const fsSync = require('fs');
