@@ -1,3 +1,4 @@
+const fs = require('fs');
 const ResponseParser = require('../utils/ResponseParser');
 const ScheduleHandler = require('./action_handlers/ScheduleHandler');
 const MultiAgentHandler = require('./action_handlers/MultiAgentHandler');
@@ -9,7 +10,10 @@ const CommandHandler = require('./action_handlers/CommandHandler');
 // ============================================================
 class NeuroShunter {
     static async dispatch(ctx, rawResponse, brain, controller) {
-        const parsed = ResponseParser.parse(rawResponse);
+        const text = typeof rawResponse === 'string' ? rawResponse : (rawResponse.text || "");
+        const images = (rawResponse && rawResponse.images) || [];
+
+        const parsed = ResponseParser.parse(text);
 
         // 1. 處理長期記憶寫入
         if (parsed.memory) {
@@ -52,6 +56,41 @@ class NeuroShunter {
                 await CommandHandler.execute(ctx, normalActions, controller, brain, this.dispatch.bind(this));
             }
         }
+
+        // 5. 處理圖片發送
+        if (images.length > 0) {
+            console.log(`🖼️ [NeuroShunter] 準備發送 ${images.length} 張圖片...`);
+            for (const imgPath of images) {
+                try {
+                    await ctx.sendDocument(imgPath);
+                } catch (e) {
+                    console.error(`❌ [NeuroShunter] 圖片發送失敗 (${imgPath}):`, e.message);
+                }
+            }
+
+            // 6. 清理暫存檔案
+            this._cleanup(images);
+        }
+    }
+
+    /**
+     * 🗑️ 清理暫存檔案
+     * @param {string[]} filePaths 
+     */
+    static _cleanup(filePaths) {
+        if (!filePaths || filePaths.length === 0) return;
+        setTimeout(() => {
+            for (const filePath of filePaths) {
+                try {
+                    if (fs.existsSync(filePath)) {
+                        fs.unlinkSync(filePath);
+                        console.log(`🗑️ [NeuroShunter] 已清理暫存檔: ${filePath}`);
+                    }
+                } catch (e) {
+                    console.warn(`⚠️ [NeuroShunter] 清理檔案失敗: ${e.message}`);
+                }
+            }
+        }, 5000); // 延遲 5 秒清理，確保傳送已完成
     }
 }
 
