@@ -22,11 +22,11 @@ class GeminiEngine extends BaseEngine {
         };
     }
 
-    async sendMessage(page, payload, selectors, doctor, isSystem, startTag, endTag) {
+    async sendMessage(page, payload, selectors, doctor, options, startTag, endTag) {
         const interactor = new PageInteractor(page, doctor);
         try {
             return await interactor.interact(
-                payload, selectors, isSystem, startTag, endTag
+                payload, selectors, options, startTag, endTag
             );
         } catch (e) {
             // 處理 selector 修復觸發的重試
@@ -35,7 +35,7 @@ class GeminiEngine extends BaseEngine {
                 selectors[type] = newSelector;
                 doctor.saveSelectors(selectors);
                 return interactor.interact(
-                    payload, selectors, isSystem, startTag, endTag, 1
+                    payload, selectors, options, startTag, endTag, 1
                 );
             }
             throw e;

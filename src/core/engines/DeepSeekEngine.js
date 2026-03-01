@@ -23,13 +23,11 @@ class DeepSeekEngine extends BaseEngine {
         };
     }
 
-    async sendMessage(page, payload, selectors, doctor, isSystem, startTag, endTag) {
+    async sendMessage(page, payload, selectors, doctor, options, startTag, endTag) {
         const interactor = new PageInteractor(page, doctor);
         try {
-            // 注意：DeepSeek 目前不具備 Google Workspace 擴充指令，
-            // 系統會自動在 PageInteractor 中跳過幽靈按鈕掃描。
             return await interactor.interact(
-                payload, selectors, isSystem, startTag, endTag
+                payload, selectors, options, startTag, endTag
             );
         } catch (e) {
             // 處理 selector 修復觸發的重試
@@ -38,7 +36,7 @@ class DeepSeekEngine extends BaseEngine {
                 selectors[type] = newSelector;
                 doctor.saveSelectors(selectors);
                 return interactor.interact(
-                    payload, selectors, isSystem, startTag, endTag, 1
+                    payload, selectors, options, startTag, endTag, 1
                 );
             }
             throw e;

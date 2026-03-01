@@ -163,10 +163,10 @@ class GolemBrain {
     /**
      * 發送訊息到 Gemini 並等待結構化回應
      * @param {string} text - 訊息內容
-     * @param {boolean} [isSystem=false] - 是否為系統訊息
+     * @param {boolean|Object} [options=false] - 是否為系統訊息或包含其餘設定
      * @returns {Promise<string>} 清理後的 AI 回應
      */
-    async sendMessage(text, isSystem = false) {
+    async sendMessage(text, options = false) {
         if (!this.browser) await this.init();
         try { await this.page.bringToFront(); } catch (e) { }
         await this.setupCDP();
@@ -179,7 +179,7 @@ class GolemBrain {
         console.log(`📡 [Brain] 發送訊號: ${reqId} (引擎: ${this.engine.getName()})`);
 
         const response = await this.engine.sendMessage(
-            this.page, payload, this.selectors, this.doctor, isSystem, startTag, endTag
+            this.page, payload, this.selectors, this.doctor, options, startTag, endTag
         );
         console.log(`✅ [Brain] 接收回應 (引擎: ${this.engine.getName()}, 長度: ${response ? response.length : 0})`);
         return response;
@@ -253,12 +253,24 @@ class GolemBrain {
             console.log(`🧠 [Memory] 已成功將技能載入長期記憶中！`);
         }
 
-        // 🚀 [第一階段] 發送底層系統協議 (不含歷史摘要)
+        // 🚀 [第一階段] 發送底層系統協議
+        // 🎯 這裡我們打破 isSystem=true 的慣例，要求等待標籤，但設定極短的 Timeout (45s)
+        // 這樣可以確保 AI 真的收到了協議，若沒收到標籤則在 45s 後強制繼續。
         const compressedPrompt = ProtocolFormatter.compress(systemPrompt);
-        await this.sendMessage(compressedPrompt, true); // ⚡ 改為 true：系統協議注入不等待結構化回應 Tag
-        console.log(`📡 [Brain] 階段一：底層協議注入完成。`);
+        console.log(`📡 [Brain] 正在注入底層協議，預計等待回傳 (Timeout: 45s)...`);
 
-        // 🧠 [第二階段] 注入完整歷史日誌摘要 (獨立訊息以優化記憶壓縮)
+        try {
+            await this.sendMessage(compressedPrompt, {
+                timeout: 45000,
+                waitForTags: true,
+                delayAfter: 3000
+            });
+            console.log(`✅ [Brain] 階段一：底層協議注入成功並已確認標籤。`);
+        } catch (e) {
+            console.warn(`⚠️ [Brain] 階段一：協議注入超時或未見標籤 (${e.message})，強制進入下一階段。`);
+        }
+
+        // 🧠 [第二階段] 注入完整歷史日誌摘要
         if (this.chatLogManager) {
             const fs = require('fs');
             const logDir = this.chatLogManager.logDir;

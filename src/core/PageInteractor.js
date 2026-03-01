@@ -34,39 +34,53 @@ class PageInteractor {
 
     /**
      * 主互動流程：輸入文字 → 點擊發送 → 等待回應 → 🌟自動點擊按鈕 (智慧判斷)
+     * @param {string} payload
+     * @param {Object} selectors
+     * @param {boolean|Object} options - 可以是單純的 isSystem 布林值，或是包含詳細設定的物件
+     * @param {string} startTag
+     * @param {string} endTag
+     * @param {number} retryCount
      */
-    async interact(payload, selectors, isSystem, startTag, endTag, retryCount = 0) {
+    async interact(payload, selectors, options = {}, startTag, endTag, retryCount = 0) {
         if (retryCount > LIMITS.MAX_INTERACT_RETRY) {
             throw new Error("🔥 DOM Doctor 修復失敗，請檢查網路或 HTML 結構大幅變更。");
         }
 
+        const opts = typeof options === 'boolean' ? { isSystem: options } : options;
+        const isSystem = opts.isSystem || false;
+        const timeout = opts.timeout || null;
+        const waitForTags = opts.waitForTags !== undefined ? opts.waitForTags : !isSystem;
+
         try {
-            // 0. 確保頁面處於空閒狀態 (避免前一則訊息還在發送中)
+            // 0. 確保頁面處於空閒狀態
             await this._waitForReady(selectors.send);
 
             // 1. 捕獲基準文字
             const baseline = await this._captureBaseline(selectors.response);
 
-            // 2. 輸入文字 (使用無敵定位法 + 斜線指令標籤召喚術)
+            // 2. 輸入文字
             await this._typeInput(selectors.input, payload);
 
             // 3. 等待輸入穩定
             await new Promise(r => setTimeout(r, TIMINGS.INPUT_DELAY));
 
-            // 4. 發送訊息 (使用物理 Enter 爆破法)
+            // 4. 發送訊息
             console.log(`🖱️ [PageInteractor] 正在點擊發送按鈕: ${selectors.send.substring(0, 30)}...`);
             await this._clickSend(selectors.send);
 
-            // 5. 若為系統訊息，延遲後直接返回
-            if (isSystem) {
-                await new Promise(r => setTimeout(r, TIMINGS.SYSTEM_DELAY));
+            // 5. 等待處理結束 (不論是否等待標籤，都必須等到生成的 Busy 狀態解除)
+            if (!waitForTags) {
+                console.log(`📡 [PageInteractor] 訊息已送出，等待 UI 空閒後返回...`);
+                await new Promise(r => setTimeout(r, 1500));
+                await this._waitForReady(selectors.send);
+                await new Promise(r => setTimeout(r, opts.delayAfter || TIMINGS.SYSTEM_DELAY || 2000));
                 return "";
             }
 
             // 6. 等待信封回應
-            console.log(`⚡ [Brain] 等待信封完整性 (${startTag} ... ${endTag})...`);
+            console.log(`⚡ [Brain] 等待信封完整性 (${startTag} ... ${endTag}) [Timeout: ${timeout || 'Default'}]...`);
             const finalResponse = await ResponseExtractor.waitForResponse(
-                this.page, selectors.response, startTag, endTag, baseline
+                this.page, selectors.response, startTag, endTag, baseline, timeout
             );
 
             if (finalResponse.status === 'TIMEOUT') throw new Error("等待回應超時");
@@ -75,10 +89,7 @@ class PageInteractor {
             const hasExtensionCommand = /\/@(Gmail|Google Calendar|Google Keep|Google Tasks|Google 文件|Google 雲端硬碟|Workspace|YouTube Music|YouTube|Google Maps|Google 航班|Google 飯店|Spotify|Google Home|SynthID)/i.test(payload);
 
             if (hasExtensionCommand) {
-                // 只有呼叫了擴充功能，才需要花 1.5 秒去巡邏有沒有儲存按鈕
                 await this._autoClickWorkspaceButtons();
-            } else {
-                console.log("⏩ [PageInteractor] 此次對話無擴充功能，跳過幽靈掃描，極速返回！");
             }
 
             console.log(`🏁 [Brain] 捕獲: ${finalResponse.status} | 長度: ${finalResponse.text.length}`);

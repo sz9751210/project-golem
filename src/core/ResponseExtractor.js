@@ -15,11 +15,11 @@ class ResponseExtractor {
      * @param {string} baseline - 發送前的基準文字 (用於排除舊回應)
      * @returns {Promise<{status: string, text: string}>}
      */
-    static async waitForResponse(page, selector, startTag, endTag, baseline) {
+    static async waitForResponse(page, selector, startTag, endTag, baseline, timeoutOverride = null) {
         const stableComplete = LIMITS.STABLE_THRESHOLD_COMPLETE;
         const stableThinking = LIMITS.STABLE_THRESHOLD_THINKING;
         const pollInterval = TIMINGS.POLL_INTERVAL;
-        const timeout = TIMINGS.TIMEOUT;
+        const timeout = timeoutOverride || TIMINGS.TIMEOUT;
 
         return page.evaluate(
             async (sel, sTag, eTag, oldText, _stableComplete, _stableThinking, _pollInterval, _timeout) => {
