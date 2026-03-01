@@ -105,11 +105,13 @@ function getOrCreateGolem(golemId) {
     console.log(`🧬 [Orchestrator] 孕育新實體: ${golemId}`);
     console.log(`================================\n`);
 
+    const golemConfig = GOLEMS_CONFIG.find(g => g.id === golemId) || {};
     const brain = new GolemBrain({
         golemId,
         userDataDir: GOLEM_MODE === 'SINGLE' ? MEMORY_BASE_DIR : path.join(MEMORY_BASE_DIR, golemId),
         logDir: LOG_BASE_DIR,
-        isSingleMode: GOLEM_MODE === 'SINGLE'
+        isSingleMode: GOLEM_MODE === 'SINGLE',
+        aiModel: golemConfig.aiModel
     });
     const controller = new TaskController({ golemId });
     const autonomy = new AutonomyManager(brain, controller, brain.memoryDriver, { golemId });
@@ -160,7 +162,7 @@ console.log(`🛡️ [Flood Guard] 系統啟動時間: ${new Date(BOOT_TIME).toL
                 // 廣播給所有 active 的 Golem
                 for (const [id, instance] of activeGolems.entries()) {
                     if (instance.brain.page) {
-                        await instance.brain.page.goto('https://gemini.google.com/app', { waitUntil: 'networkidle2' });
+                        await instance.brain.page.goto(instance.brain.engine.getAppUrl(), { waitUntil: 'networkidle2' });
                     }
                     const wakeUpPrompt = `【系統重啟初始化：記憶轉生】\n請遵守你的核心設定(Project Golem [${id}])。你剛進行了會話重置以釋放記憶體。\n以下是你上一輪對話留下的【記憶摘要】：\n${summary}\n\n請根據上述摘要，向使用者打招呼，並嚴格包含以下這段話（或類似語氣）：\n「🔄 對話視窗已成功重啟，並載入了剛剛的重點記憶！不過老實說，重啟過程可能會讓我忘記一些瑣碎的小細節，如果接下來我有漏掉什麼，請隨時提醒我喔！」`;
                     if (instance.brain.sendMessage) {
@@ -240,7 +242,7 @@ async function handleUnifiedMessage(ctx, forceTargetId = null) {
         await ctx.reply("🔄 收到 /new 指令！正在為您開啟全新的大腦對話神經元...");
         try {
             if (brain.page) {
-                await brain.page.goto('https://gemini.google.com/app', { waitUntil: 'networkidle2' });
+                await brain.page.goto(brain.engine.getAppUrl(), { waitUntil: 'networkidle2' });
                 await brain.init(true);
                 await ctx.reply("✅ 物理重置完成！已經為您切斷舊有記憶，現在這是一個全新且乾淨的 Golem 實體。");
             } else {
@@ -259,7 +261,7 @@ async function handleUnifiedMessage(ctx, forceTargetId = null) {
                 await brain.memoryDriver.clearMemory();
             }
             if (brain.page) {
-                await brain.page.goto('https://gemini.google.com/app', { waitUntil: 'networkidle2' });
+                await brain.page.goto(brain.engine.getAppUrl(), { waitUntil: 'networkidle2' });
                 await brain.init(true);
                 await ctx.reply("✅ 記憶庫 DB 已徹底清空格式化！網頁也已重置，這是一個 100% 空白、無任何歷史包袱的 Golem 實體。");
             } else {

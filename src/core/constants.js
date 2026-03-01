@@ -20,9 +20,10 @@ const LIMITS = Object.freeze({
     STABLE_THRESHOLD_THINKING: 60,   // 未收到 BEGIN，Thinking Mode 容忍 60 次 (30秒)
 });
 
-/** @enum {string} Gemini 相關 URL */
+/** @enum {string} AI 引擎 URL */
 const URLS = Object.freeze({
     GEMINI_APP: 'https://gemini.google.com/app',
+    GROK_APP: 'https://grok.com',
 });
 
 /** 瀏覽器啟動參數 */

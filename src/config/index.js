@@ -27,6 +27,7 @@ const CONFIG = {
     ADMIN_IDS: [process.env.ADMIN_ID, process.env.DISCORD_ADMIN_ID].map(k => cleanEnv(k)).filter(k => k),
     GITHUB_REPO: cleanEnv(process.env.GITHUB_REPO || 'https://raw.githubusercontent.com/Arvincreator/project-golem/main/', true),
     QMD_PATH: cleanEnv(process.env.GOLEM_QMD_PATH || 'qmd', true),
+    AI_MODEL: cleanEnv(process.env.AI_MODEL || 'gemini').toLowerCase(),
     DONATE_URL: 'https://buymeacoffee.com/arvincreator'
 };
 
@@ -37,7 +38,8 @@ if (CONFIG.API_KEYS.some(isPlaceholder)) CONFIG.API_KEYS = CONFIG.API_KEYS.filte
 
 // 🚀 解析運行模式 (單機 vs 多機)
 let GOLEMS_CONFIG = [];
-const GOLEM_MODE = (process.env.GOLEM_MODE || '').trim().toUpperCase();
+let modeToUse = (process.env.GOLEM_MODE || '').trim().toUpperCase();
+const GOLEM_MODE = modeToUse;
 const golemsJsonPath = path.join(process.cwd(), 'golems.json');
 
 if (GOLEM_MODE === 'SINGLE') {
@@ -48,13 +50,19 @@ if (GOLEM_MODE === 'SINGLE') {
             tgToken: CONFIG.TG_TOKEN,
             tgAuthMode: CONFIG.TG_AUTH_MODE,
             adminId: CONFIG.ADMIN_ID,
-            chatId: CONFIG.TG_CHAT_ID
+            chatId: CONFIG.TG_CHAT_ID,
+            aiModel: CONFIG.AI_MODEL
         });
     }
     console.log('📡 [Config] 運行模式: 單機 (GOLEM_MODE=SINGLE)');
 } else if (fs.existsSync(golemsJsonPath)) {
     try {
         GOLEMS_CONFIG = JSON.parse(fs.readFileSync(golemsJsonPath, 'utf8'));
+        // 為每個 golem 注入 aiModel (若 golems.json 未指定則使用全域預設)
+        GOLEMS_CONFIG = GOLEMS_CONFIG.map(g => ({
+            ...g,
+            aiModel: (g.aiModel || CONFIG.AI_MODEL || 'gemini').toLowerCase()
+        }));
         console.log(`📡 [Config] 運行模式: 多機 (${GOLEMS_CONFIG.length} 實體)`);
     } catch (e) {
         console.error("❌ [Config] golems.json 格式錯誤:", e.message);
@@ -70,7 +78,8 @@ if (modeToUse === "SINGLE" || GOLEMS_CONFIG.length === 0) {
             tgToken: CONFIG.TG_TOKEN,
             tgAuthMode: CONFIG.TG_AUTH_MODE,
             chatId: CONFIG.TG_CHAT_ID,
-            adminId: CONFIG.ADMIN_ID
+            adminId: CONFIG.ADMIN_ID,
+            aiModel: CONFIG.AI_MODEL
         }];
         console.log(`ℹ️ [Config] 採用 .env 單機設定 (模式: ${modeToUse})`);
     } else {
