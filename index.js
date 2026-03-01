@@ -59,6 +59,7 @@ const OpticNerve = require('./src/services/OpticNerve');
 const SystemUpgrader = require('./src/managers/SystemUpgrader');
 const InteractiveMultiAgent = require('./src/core/InteractiveMultiAgent');
 const introspection = require('./src/services/Introspection');
+const CommandHandler = require('./src/core/action_handlers/CommandHandler');
 
 const telegramBots = new Map();
 if (GOLEMS_CONFIG && GOLEMS_CONFIG.length > 0) {
@@ -490,7 +491,13 @@ async function handleUnifiedCallback(ctx, actionData, forceTargetId = null) {
 
             let remainingResult = "";
             try {
-                remainingResult = await controller.runSequence(ctx, steps, nextIndex + 1) || "";
+                const stepRes = await controller.runSequence(ctx, steps, nextIndex + 1);
+                if (stepRes && typeof stepRes === 'object' && stepRes.status === 'PENDING_APPROVAL') {
+                    // 如果後續步驟又遇到危險指令，再次跳出審核
+                    await CommandHandler.showApproval(ctx, stepRes);
+                    return;
+                }
+                remainingResult = stepRes || "";
             } catch (err) {
                 console.warn(`⚠️ [System] 執行後續步驟時發生警告: ${err.message}`);
             }

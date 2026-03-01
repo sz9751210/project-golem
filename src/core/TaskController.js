@@ -55,20 +55,13 @@ class TaskController {
                 this.pendingTasks.set(approvalId, {
                     steps, nextIndex: i, ctx, timestamp: Date.now()
                 });
-                const cmdBlock = cmdToRun ? `\n\`\`\`\n${cmdToRun}\n\`\`\`` : "";
-                await ctx.reply(
-                    `⚠️ ${risk.level === 'DANGER' ? '🔴 危險指令' : '🟡 警告'}${cmdBlock}\n${risk.reason}`,
-                    {
-                        parse_mode: 'Markdown',
-                        reply_markup: {
-                            inline_keyboard: [[
-                                { text: '✅ 批准', callback_data: `APPROVE_${approvalId}` },
-                                { text: '❌ 拒絕', callback_data: `DENY_${approvalId}` }
-                            ]]
-                        }
-                    }
-                );
-                return null;
+                return {
+                    status: 'PENDING_APPROVAL',
+                    approvalId,
+                    riskLevel: risk.level,
+                    reason: risk.reason,
+                    cmd: cmdToRun
+                };
             }
             try {
                 if (!this.internalExecutor) this.internalExecutor = new Executor();
