@@ -29,53 +29,84 @@ class ResponseExtractor {
                     let lastCheckText = "";
 
                     const check = () => {
-                        const bubbles = document.querySelectorAll(sel);
-                        if (bubbles.length === 0) { setTimeout(check, _pollInterval); return; }
-
-                        let currentLastBubble = bubbles[bubbles.length - 1];
-                        let container = currentLastBubble.closest('model-response') ||
-                            currentLastBubble.closest('.markdown') ||
-                            currentLastBubble.closest('.model-response-text') ||
-                            currentLastBubble.parentElement ||
-                            currentLastBubble;
-
-                        const rawText = container.innerText || "";
-                        const startIndex = rawText.indexOf(sTag);
-                        const endIndex = rawText.indexOf(eTag);
-
-                        // ✨ [條件 1：完美信封] 看到 END 標籤，瞬間打包回傳
-                        if (startIndex !== -1 && endIndex !== -1 && endIndex > startIndex) {
-                            const content = rawText.substring(startIndex + sTag.length, endIndex).trim();
-                            resolve({ status: 'ENVELOPE_COMPLETE', text: content });
+                        const bubbles = Array.from(document.querySelectorAll(sel));
+                        if (bubbles.length === 0) {
+                            if (Math.random() > 0.95) console.log(`[DOM_EXTRACTOR] 搜尋中... Selector: ${sel}`);
+                            setTimeout(check, _pollInterval);
                             return;
                         }
 
-                        // 計算文字穩定度
+                        let rawText = "";
+                        const lookback = Math.min(bubbles.length, 5); // 稍微增加往前掃描的深度 (最近 5 個)
+                        for (let i = bubbles.length - lookback; i < bubbles.length; i++) {
+                            rawText += (bubbles[i].innerText || "") + "\n";
+                        }
+
+                        // 🎯 [核心優化] 模糊搜尋信封標籤 (防止 Markdown 渲染器注入隱形成分，並處理 AI 幻覺)
+                        const normalize = (t) => (t || "").replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, '');
+                        const normText = normalize(rawText);
+
+                        // 定義可能的標籤變體 (具體 ID vs 字面 placeholder)
+                        const possibleSTags = [normalize(sTag), "[[BEGIN:reqId]]"].map(normalize);
+                        const possibleETags = [normalize(eTag), "[[END:reqId]]"].map(normalize);
+
+                        let startIndexNorm = -1;
+                        let sTagMatch = "";
+                        for (const pst of possibleSTags) {
+                            const idx = normText.indexOf(pst);
+                            if (idx !== -1 && (startIndexNorm === -1 || idx < startIndexNorm)) {
+                                startIndexNorm = idx;
+                                sTagMatch = pst;
+                            }
+                        }
+
+                        let endIndexNorm = -1;
+                        let eTagMatch = "";
+                        for (const pet of possibleETags) {
+                            const idx = normText.lastIndexOf(pet); // 抓最後一個結束標籤
+                            if (idx !== -1 && idx > startIndexNorm) {
+                                endIndexNorm = idx;
+                                eTagMatch = pet;
+                            }
+                        }
+
+                        // 🔍 [Diagnostic Log]
+                        if (startIndexNorm !== -1 || rawText.length > 0) {
+                            console.log(`[DOM_EXTRACTOR] 狀態: BEGIN(${sTagMatch})=${startIndexNorm} | END(${eTagMatch})=${endIndexNorm} | 全文字長度: ${rawText.length}`);
+                            if (startIndexNorm !== -1 && endIndexNorm === -1) {
+                                console.log(`[DOM_EXTRACTOR] 已抓取到旗幟 (${sTagMatch})，正在等待落幕...`);
+                            }
+                        }
+
+                        if (startIndexNorm !== -1 && endIndexNorm !== -1 && endIndexNorm > startIndexNorm) {
+                            console.log(`[DOM_EXTRACTOR] ✅ 成功發現完整信封 (Fuzzy: ${sTagMatch})！內容長度: ${rawText.length}`);
+                            resolve({ status: 'ENVELOPE_COMPLETE', text: rawText });
+                            return;
+                        }
+
                         if (rawText === lastCheckText) {
                             stableCount++;
                         } else {
                             stableCount = 0;
+                            if (rawText.length > 0) console.log(`[DOM_EXTRACTOR] 文字變動中... 穩定計數歸零`);
                         }
                         lastCheckText = rawText;
 
-                        if (startIndex !== -1) {
-                            // ✨ [條件 2：已經開始回答] 看到 BEGIN，但遲遲沒看到 END (AI 忘記寫)
-                            // 只要畫面停頓超過 5 秒 (10 次檢查) 沒動靜，就強制截斷回傳，不等 30 秒！
+                        if (startIndexNorm !== -1) {
+                            // ✨ [條件 2：已經開始回答] 看到 BEGIN，但遲遲沒看到 END
                             if (stableCount > _stableComplete) {
-                                const content = rawText.substring(startIndex + sTag.length).trim();
-                                resolve({ status: 'ENVELOPE_TRUNCATED', text: content });
+                                resolve({ status: 'ENVELOPE_TRUNCATED', text: rawText });
                                 return;
                             }
-                        } else if (rawText !== oldText && !rawText.includes('SYSTEM: Please WRAP')) {
-                            // ✨ [條件 3：Thinking Mode] 還沒看到 BEGIN，可能在深思
-                            // 給予最高 30 秒 (60 次檢查) 的容忍度，等它想完
+                        } else if (rawText.trim() !== oldText.trim() && !rawText.includes('SYSTEM: Please WRAP')) {
+                            // ✨ [條件 3：Thinking Mode] 還沒看到 BEGIN
                             if (stableCount > _stableThinking) {
                                 resolve({ status: 'FALLBACK_DIFF', text: rawText });
                                 return;
                             }
                         }
 
-                        // 總超時時間上限 5 分鐘 (300,000 ms)
+                        // 總超時時間上限
                         if (Date.now() - startTime > _timeout) {
                             resolve({ status: 'TIMEOUT', text: '' });
                             return;

@@ -40,6 +40,11 @@ let GOLEMS_CONFIG = [];
 const GOLEM_MODE = (process.env.GOLEM_MODE || '').trim().toUpperCase();
 const golemsJsonPath = path.join(process.cwd(), 'golems.json');
 
+// 🧠 解析全域 AI 模型 (預設 gemini)
+const GLOBAL_AI_MODEL = cleanEnv(process.env.AI_MODEL || 'gemini').toLowerCase();
+
+let modeToUse = GOLEM_MODE;
+
 if (GOLEM_MODE === 'SINGLE') {
     // 強制單機模式：只使用 .env 配置，忽略 golems.json
     if (CONFIG.TG_TOKEN) {
@@ -48,13 +53,19 @@ if (GOLEM_MODE === 'SINGLE') {
             tgToken: CONFIG.TG_TOKEN,
             tgAuthMode: CONFIG.TG_AUTH_MODE,
             adminId: CONFIG.ADMIN_ID,
-            chatId: CONFIG.TG_CHAT_ID
+            chatId: CONFIG.TG_CHAT_ID,
+            aiModel: GLOBAL_AI_MODEL
         });
     }
     console.log('📡 [Config] 運行模式: 單機 (GOLEM_MODE=SINGLE)');
 } else if (fs.existsSync(golemsJsonPath)) {
     try {
         GOLEMS_CONFIG = JSON.parse(fs.readFileSync(golemsJsonPath, 'utf8'));
+        // 為每個 golem 注入 aiModel (per-golem 覆蓋 or 全域預設)
+        GOLEMS_CONFIG = GOLEMS_CONFIG.map(g => ({
+            ...g,
+            aiModel: (g.aiModel || GLOBAL_AI_MODEL).toLowerCase()
+        }));
         console.log(`📡 [Config] 運行模式: 多機 (${GOLEMS_CONFIG.length} 實體)`);
     } catch (e) {
         console.error("❌ [Config] golems.json 格式錯誤:", e.message);
@@ -70,7 +81,8 @@ if (modeToUse === "SINGLE" || GOLEMS_CONFIG.length === 0) {
             tgToken: CONFIG.TG_TOKEN,
             tgAuthMode: CONFIG.TG_AUTH_MODE,
             chatId: CONFIG.TG_CHAT_ID,
-            adminId: CONFIG.ADMIN_ID
+            adminId: CONFIG.ADMIN_ID,
+            aiModel: GLOBAL_AI_MODEL
         }];
         console.log(`ℹ️ [Config] 採用 .env 單機設定 (模式: ${modeToUse})`);
     } else {

@@ -13,6 +13,7 @@ const ProtocolFormatter = require('../services/ProtocolFormatter');
 const PageInteractor = require('./PageInteractor');
 const ChatLogManager = require('../managers/ChatLogManager');
 const { URLS } = require('./constants');
+const EngineFactory = require('./engines/EngineFactory');
 
 // ============================================================
 // 🧠 Golem Brain (Web Gemini) - Dual-Engine + Titan Protocol
@@ -21,7 +22,12 @@ class GolemBrain {
     constructor(options = {}) {
         // ── 實體識別與設定 ──
         this.golemId = options.golemId || 'default';
+        this.aiModel = options.aiModel || 'gemini';
         this.userDataDir = options.userDataDir || path.resolve(CONFIG.USER_DATA_DIR || './golem_memory');
+
+        // ── AI 引擎 (Strategy Pattern) ──
+        this.engine = EngineFactory.create(this.aiModel);
+        console.log(`🧠 [Brain][${this.golemId}] 使用引擎: ${this.engine.getName()}`);
 
         // ── 瀏覽器狀態 ──
         this.browser = null;
@@ -31,7 +37,9 @@ class GolemBrain {
 
         // ── DOM 修復服務 ──
         this.doctor = new DOMDoctor();
-        this.selectors = this.doctor.loadSelectors();
+        // 載入選擇器：引擎預設值 + 醫生快取值 (快取優先)
+        this.selectors = { ...this.engine.getDefaultSelectors(), ...this.doctor.loadSelectors() };
+        console.log(`🎯 [Brain][${this.golemId}] 最終選擇器已同步: ${JSON.stringify(this.selectors).substring(0, 100)}...`);
 
         // ── 記憶引擎 ──
         const mode = cleanEnv(process.env.GOLEM_MEMORY_MODE || 'browser').toLowerCase();
@@ -73,8 +81,47 @@ class GolemBrain {
         if (!this.page) {
             const pages = await this.browser.pages();
             this.page = pages.length > 0 ? pages[0] : await this.browser.newPage();
-            await this.page.goto(URLS.GEMINI_APP, { waitUntil: 'networkidle2' });
+
+            // 🎙️ [Console Mirror] 鏡像瀏覽器內部日誌到終端機 (除錯關鍵)
+            this.page.on('console', msg => {
+                const text = msg.text();
+                if (text.includes('[DOM_EXTRACTOR]') || text.includes('[PageInteractor]')) {
+                    console.log(`📡 [Browser] ${text}`);
+                }
+            });
+
+            await this.page.goto(this.engine.getAppUrl(), { waitUntil: 'networkidle2' });
             isNewSession = true;
+        }
+
+        // 🎯 [核心修復] 檢查是否需要登入
+        let loginRetry = 0;
+        while (true) {
+            try {
+                if (await this.engine.isLoggedIn(this.page)) break;
+            } catch (e) {
+                // 忽略導覽導致的執行環境毀損或導覽中錯誤，這在登入過程中很常見
+                const msg = e.message || "";
+                if (!msg.includes('context was destroyed') && !msg.includes('navigation') && !msg.includes('Navigating')) {
+                    console.warn(`⚠️ [Brain][${this.golemId}] 登入檢查暫時跳過 (錯誤: ${msg.substring(0, 50)}...)`);
+                }
+            }
+
+            if (loginRetry % 10 === 0) {
+                console.log(`\n📢 [Brain][${this.golemId}] 尚未偵測到登入狀態或輸入框。`);
+                console.log(`👉 請在瀏覽器視窗中完成 [${this.engine.getName()}] 帳號登入。`);
+                console.log(`📡 等待中... (嘗試次數: ${loginRetry})\n`);
+            }
+            await new Promise(r => setTimeout(r, 2000));
+            loginRetry++;
+
+            // 如果頁面被關閉了則中斷
+            if (this.page.isClosed()) throw new Error("瀏覽器頁面已被關閉，初始化中斷。");
+        }
+
+        if (loginRetry > 0) {
+            console.log(`✅ [Brain][${this.golemId}] 登入偵測成功！等待 5 秒讓介面穩定...`);
+            await new Promise(r => setTimeout(r, 5000));
         }
 
         // 3. 初始化記憶引擎 (含降級策略)
@@ -86,6 +133,10 @@ class GolemBrain {
         // 5. 新會話: 注入系統 Prompt
         if (forceReload || isNewSession) {
             await this._injectSystemPrompt(forceReload);
+
+            // ✨ [穩定化延遲] 確保系統 Prompt 發送後，UI 進入 Busy -> Ready 循環
+            console.log(`📡 [Brain][${this.golemId}] 正在等待系統協議初始化完成 (5s)...`);
+            await new Promise(r => setTimeout(r, 5000));
         }
     }
 
@@ -103,108 +154,10 @@ class GolemBrain {
         }
     }
 
-    // ✨ [新增] 動態視覺腳本：針對新版 UI 切換模型 (支援中英文介面與防呆)
+    // ✨ 委派給引擎進行模型切換
     async switchModel(targetMode) {
         if (!this.page) throw new Error("大腦尚未啟動。");
-        try {
-            const result = await this.page.evaluate(async (mode) => {
-                const delay = (ms) => new Promise(r => setTimeout(r, ms));
-
-                // 定義支援的模式及其可能的中英文關鍵字
-                const modeKeywords = {
-                    'fast': ['fast', '快捷'],
-                    'thinking': ['thinking', '思考型', '思考'], // 增加容錯率
-                    'pro': ['pro'] // Pro 通常中英文都叫 Pro
-                };
-
-                // 取得目標模式的所有關鍵字
-                const targetKeywords = modeKeywords[mode] || [mode];
-
-                // 1. 尋找畫面底部含有目標關鍵字的按鈕 (這可能是展開選單的按鈕)
-                const allKnownKeywords = [...modeKeywords.fast, ...modeKeywords.thinking, ...modeKeywords.pro];
-                const buttons = Array.from(document.querySelectorAll('div[role="button"], button'));
-                let pickerBtn = null;
-
-                for (const btn of buttons) {
-                    const txt = (btn.innerText || "").toLowerCase().trim();
-                    if (allKnownKeywords.some(k => txt.includes(k.toLowerCase())) && btn.offsetHeight > 10 && btn.offsetHeight < 60) {
-                        const rect = btn.getBoundingClientRect();
-                        // 根據截圖，該按鈕位於畫面下半部
-                        if (rect.top > window.innerHeight / 2) {
-                            pickerBtn = btn;
-                            break;
-                        }
-                    }
-                }
-
-                if (!pickerBtn) return "⚠️ 找不到畫面底部的模型切換按鈕。UI 可能已變更，或您停留在登入畫面。";
-
-                // ✨ [核心防呆] 檢查按鈕是否為「灰色不可點擊」狀態
-                const isDisabled = pickerBtn.disabled ||
-                    pickerBtn.getAttribute('aria-disabled') === 'true' ||
-                    pickerBtn.classList.contains('disabled');
-
-                if (isDisabled) {
-                    return "⚠️ 模型切換按鈕目前呈現「灰色不可點擊」狀態！這通常是因為您尚未登入 Google 帳號，或該帳號目前沒有權限切換模型。";
-                }
-
-                // 點擊展開選單
-                pickerBtn.click();
-                await delay(1000); // 等待選單彈出動畫
-
-                // 2. 尋找選單中對應的目標模式 (比對中英文關鍵字)
-                const items = Array.from(document.querySelectorAll('*'));
-                let targetElement = null;
-                let bestMatch = null;
-
-                for (const el of items) {
-                    // 排除觸發按鈕本身，避免點到自己導致選單關閉
-                    if (pickerBtn === el || pickerBtn.contains(el)) continue;
-
-                    // 排除不可見的元素
-                    const rect = el.getBoundingClientRect();
-                    if (rect.width === 0 || rect.height === 0) continue;
-
-                    const txt = (el.innerText || "").trim().toLowerCase();
-
-                    // 【防呆關鍵】如果文字太長，代表它是大容器 (例如整個網頁 background)，絕對不能點擊
-                    if (txt.length === 0 || txt.length > 50) continue;
-
-                    // 檢查是否包含目標關鍵字
-                    if (targetKeywords.some(keyword => txt.includes(keyword.toLowerCase()))) {
-                        // 優先尋找帶有標準選單屬性的元素
-                        const role = el.getAttribute('role');
-                        if (role === 'menuitem' || role === 'menuitemradio' || role === 'option') {
-                            targetElement = el;
-                            break; // 找到最標準的選項，直接選定中斷
-                        }
-
-                        // 否則，尋找最深層的元素 (querySelectorAll 由外而內，最後的通常最深)
-                        bestMatch = el;
-                    }
-                }
-
-                // 如果找不到標準 role，使用最深層的比對結果
-                if (!targetElement) {
-                    targetElement = bestMatch;
-                }
-
-                if (!targetElement) {
-                    // 若真的找不到，點擊背景關閉選單避免畫面卡死
-                    document.body.click();
-                    return `⚠️ 選單已展開，但找不到對應「${mode}」的選項 (已搜尋關鍵字: ${targetKeywords.join(', ')})。您可能目前無法使用該模型。`;
-                }
-
-                // 點擊目標選項
-                targetElement.click();
-                await delay(800);
-                return `✅ 成功為您點擊並切換至 [${mode}] 模式！`;
-            }, targetMode.toLowerCase());
-
-            return result;
-        } catch (error) {
-            return `❌ 視覺腳本執行失敗: ${error.message}`;
-        }
+        return await this.engine.switchModel(this.page, targetMode);
     }
 
     /**
@@ -223,26 +176,13 @@ class GolemBrain {
         const endTag = ProtocolFormatter.buildEndTag(reqId);
         const payload = ProtocolFormatter.buildEnvelope(text, reqId);
 
-        console.log(`📡 [Brain] 發送訊號: ${reqId} (含每回合強制洗腦引擎)`);
+        console.log(`📡 [Brain] 發送訊號: ${reqId} (引擎: ${this.engine.getName()})`);
 
-        const interactor = new PageInteractor(this.page, this.doctor);
-
-        try {
-            return await interactor.interact(
-                payload, this.selectors, isSystem, startTag, endTag
-            );
-        } catch (e) {
-            // 處理 selector 修復觸發的重試
-            if (e.message && e.message.startsWith('SELECTOR_HEALED:')) {
-                const [, type, newSelector] = e.message.split(':');
-                this.selectors[type] = newSelector;
-                this.doctor.saveSelectors(this.selectors);
-                return interactor.interact(
-                    payload, this.selectors, isSystem, startTag, endTag, 1
-                );
-            }
-            throw e;
-        }
+        const response = await this.engine.sendMessage(
+            this.page, payload, this.selectors, this.doctor, isSystem, startTag, endTag
+        );
+        console.log(`✅ [Brain] 接收回應 (引擎: ${this.engine.getName()}, 長度: ${response ? response.length : 0})`);
+        return response;
     }
 
     /**
@@ -315,7 +255,7 @@ class GolemBrain {
 
         // 🚀 [第一階段] 發送底層系統協議 (不含歷史摘要)
         const compressedPrompt = ProtocolFormatter.compress(systemPrompt);
-        await this.sendMessage(compressedPrompt, false); // ⚡ 改為 false：等待完整回應
+        await this.sendMessage(compressedPrompt, true); // ⚡ 改為 true：系統協議注入不等待結構化回應 Tag
         console.log(`📡 [Brain] 階段一：底層協議注入完成。`);
 
         // 🧠 [第二階段] 注入完整歷史日誌摘要 (獨立訊息以優化記憶壓縮)
@@ -348,7 +288,7 @@ class GolemBrain {
 
                     if (historicalMemory) {
                         const memoryPulse = `【指令：載入長期記憶與背景壓縮】\n以下是你過去所有對話的彙總精華（依時間排序）。請完整閱讀並內化這些背景，將其視為你目前已知的所有先驗知識與決策紀錄：\n${historicalMemory}`;
-                        await this.sendMessage(memoryPulse, false); // ⚡ 改為 false：確保記憶載入完成
+                        await this.sendMessage(memoryPulse, true); // ⚡ 改為 true：回憶注入不等待回覆
                         console.log(`🧠 [Brain] 階段二：已注入 ${files.length} 個歷史日誌檔案作為獨立回憶。`);
                     }
                 }

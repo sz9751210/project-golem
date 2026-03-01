@@ -10,21 +10,18 @@ class DOMDoctor {
     constructor() {
         this.keyChain = new KeyChain();
         this.cacheFile = path.join(process.cwd(), 'golem_selectors.json');
-        this.defaults = {
-            input: 'div[contenteditable="true"], rich-textarea > div, p[data-placeholder]',
-            send: 'button[aria-label*="Send"], button[aria-label*="傳送"], span[data-icon="send"]',
-            response: '.model-response-text, .message-content, .markdown, div[data-test-id="message-content"]'
-        };
+        this.defaults = {}; // 🛑 移除 Gemini 專屬硬編碼
     }
+
     loadSelectors() {
         try {
             if (fs.existsSync(this.cacheFile)) {
-                const cached = JSON.parse(fs.readFileSync(this.cacheFile, 'utf-8'));
-                return { ...this.defaults, ...cached };
+                return JSON.parse(fs.readFileSync(this.cacheFile, 'utf-8'));
             }
         } catch (e) { }
-        return { ...this.defaults };
+        return {};
     }
+
     saveSelectors(newSelectors) {
         try {
             const current = this.loadSelectors();

@@ -87,8 +87,8 @@ config_wizard() {
     [ -f "$DOT_ENV_PATH" ] && source "$DOT_ENV_PATH" 2>/dev/null
 
     local step=1
-    local total=6
-    [ "$skip_bot_config" = "true" ] && total=4
+    local total=7
+    [ "$skip_bot_config" = "true" ] && total=5
 
     while [ $step -le 6 ]; do
         local display_step=$step
@@ -174,6 +174,15 @@ config_wizard() {
                 fi
                 step=$((step + 1)); echo "" ;;
             6)
+                echo -e "  ${BOLD}${MAGENTA}[${display_step}/${total}]${NC} ${BOLD}AI 大腦模型 (AI Engine)${NC}"
+                echo -e "  目前: ${CYAN}${AI_MODEL:-gemini}${NC}"
+                read -r -p "  👉 選擇模型 [1] Gemini (預設) / [2] DeepSeek / [B] 返回: " input
+                input=$(echo "$input" | xargs 2>/dev/null)
+                if [[ "$input" =~ ^[Bb]$ ]]; then step=$((step - 1)); continue; fi
+                if [[ "$input" == "2" ]]; then update_env "AI_MODEL" "deepseek"; AI_MODEL="deepseek"
+                elif [[ "$input" == "1" ]]; then update_env "AI_MODEL" "gemini"; AI_MODEL="gemini"; fi
+                step=$((step + 1)); echo "" ;;
+            7)
                 echo -e "  ${BOLD}${MAGENTA}[${display_step}/${total}]${NC} ${BOLD}Web Dashboard${NC}"
                 echo -e "  目前: ${CYAN}${ENABLE_WEB_DASHBOARD:-false}${NC}"
                 read -r -p "  👉 啟用 Web Dashboard? [Y/n/B] (留空保留): " input
@@ -210,6 +219,7 @@ config_wizard() {
     local md; md=$(mask_value "${DISCORD_TOKEN:-}")
     box_line_colored "  DC Token:       ${CYAN}${md}${NC}"
     box_line_colored "  DC Admin ID:    ${CYAN}${DISCORD_ADMIN_ID:-未設定}${NC}"
+    box_line_colored "  AI Model:       ${CYAN}${AI_MODEL:-gemini}${NC}"
     box_line_colored "  Dashboard:      ${CYAN}${ENABLE_WEB_DASHBOARD:-false}${NC}"
     box_sep
     box_line_colored "  ${GREEN}${BOLD}✅ 配置已儲存到 .env${NC}"
@@ -259,19 +269,20 @@ golems_wizard() {
     
     for (( i=1; i<=golem_count; i++ )); do
         # 嘗試讀取舊有值
-        local old_id="" old_token="" old_role="" old_mode="ADMIN" old_auth_id=""
+        local old_id="" old_token="" old_role="" old_mode="ADMIN" old_auth_id="" old_model="gemini"
         if [ "$has_existing" = "true" ]; then
             local idx=$((i-1))
             local raw; raw=$(node -e "try { 
                 const c = require('$GOLEMS_FILE'); 
                 const g = c[$idx] || {};
-                console.log([g.id||'', g.tgToken||'', g.role||'', g.tgAuthMode||'ADMIN', g.adminId||g.chatId||''].join('|'));
-            } catch(e) { console.log('||||'); }" 2>/dev/null)
+                console.log([g.id||'', g.tgToken||'', g.role||'', g.tgAuthMode||'ADMIN', g.adminId||g.chatId||'', g.aiModel||'gemini'].join('|'));
+            } catch(e) { console.log('|||||'); }" 2>/dev/null)
             old_id=$(echo "$raw" | cut -d'|' -f1)
             old_token=$(echo "$raw" | cut -d'|' -f2)
             old_role=$(echo "$raw" | cut -d'|' -f3)
             old_mode=$(echo "$raw" | cut -d'|' -f4)
             old_auth_id=$(echo "$raw" | cut -d'|' -f5)
+            old_model=$(echo "$raw" | cut -d'|' -f6)
         fi
 
         # ASCII A, B, C...
@@ -281,13 +292,13 @@ golems_wizard() {
         
         echo -e "\n  ${BOLD}${MAGENTA}--- 設定第 $i 台 Golem (共 $golem_count 台) ---${NC}"
         
-        read -r -p "  👉 [1/4] 輸入 Golem ID (預設: $default_id): " g_id
+        read -r -p "  👉 [1/5] 輸入 Golem ID (預設: $default_id): " g_id
         g_id=$(echo "$g_id" | xargs 2>/dev/null)
         [ -z "$g_id" ] && g_id="$default_id"
 
         local masked_old_token; masked_old_token=$(mask_value "$old_token")
-        local token_prompt="  👉 [2/4] 輸入 Telegram Token (必填): "
-        [ -n "$old_token" ] && token_prompt="  👉 [2/4] 輸入 Telegram Token (留空保留: $masked_old_token): "
+        local token_prompt="  👉 [2/5] 輸入 Telegram Token (必填): "
+        [ -n "$old_token" ] && token_prompt="  👉 [2/5] 輸入 Telegram Token (留空保留: $masked_old_token): "
         
         read -r -p "$token_prompt" g_token
         g_token=$(echo "$g_token" | xargs 2>/dev/null)
@@ -303,11 +314,11 @@ golems_wizard() {
         if [ $i -eq 2 ]; then def_role="測試機/除錯/開發環境"; fi
         [ -n "$old_role" ] && def_role="$old_role"
         
-        read -r -p "  👉 [3/4] 輸入角色/職責 (預設: $def_role): " g_role
+        read -r -p "  👉 [3/5] 輸入角色/職責 (預設: $def_role): " g_role
         g_role=$(echo "$g_role" | xargs 2>/dev/null)
         [ -z "$g_role" ] && g_role="$def_role"
 
-        read -r -p "  👉 [4/4] 選擇驗證模式 [A] 個人 ADMIN / [C] 群組 CHAT (目前: $old_mode): " g_auth_mode
+        read -r -p "  👉 [4/5] 選擇驗證模式 [A] 個人 ADMIN / [C] 群組 CHAT (目前: $old_mode): " g_auth_mode
         g_auth_mode=$(echo "$g_auth_mode" | xargs 2>/dev/null)
         local auth_mode_str="$old_mode"
         if [[ "$g_auth_mode" =~ ^[Cc]$ ]]; then auth_mode_str="CHAT"
@@ -322,7 +333,14 @@ golems_wizard() {
         g_auth_id=$(echo "$g_auth_id" | xargs 2>/dev/null)
         [ -z "$g_auth_id" ] && g_auth_id="$old_auth_id"
 
-        json_output+="  {\n    \"id\": \"$g_id\",\n    \"tgToken\": \"$g_token\",\n    \"role\": \"$g_role\""
+        echo -e "  👉 [5/5] 選擇 AI 模型 (目前: $old_model)"
+        read -r -p "     [1] Gemini (預設) / [2] DeepSeek: " g_model
+        g_model=$(echo "$g_model" | xargs 2>/dev/null)
+        local model_str="$old_model"
+        if [ "$g_model" = "2" ]; then model_str="deepseek"
+        elif [ "$g_model" = "1" ]; then model_str="gemini"; fi
+
+        json_output+="  {\n    \"id\": \"$g_id\",\n    \"tgToken\": \"$g_token\",\n    \"role\": \"$g_role\",\n    \"aiModel\": \"$model_str\""
         if [ -n "$auth_mode_str" ]; then json_output+=",\n    \"tgAuthMode\": \"$auth_mode_str\""; fi
         if [ -n "$g_auth_id" ]; then
             if [ "$auth_mode_str" = "CHAT" ]; then json_output+=",\n    \"chatId\": \"$g_auth_id\""
