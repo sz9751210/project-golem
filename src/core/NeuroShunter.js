@@ -30,9 +30,7 @@ class NeuroShunter {
         // 2. 處理直接回覆
         if (parsed.reply && !shouldSuppressReply) {
             let finalReply = parsed.reply;
-            if (ctx.platform === 'telegram' && ctx.shouldMentionSender) {
-                finalReply = `${ctx.senderMention} ${parsed.reply}`;
-            }
+            // 移除手動添加 senderMention，依賴 Telegram 原生 Reply 氣泡
             console.log(`🤖 [Golem] 說: ${finalReply}`);
 
             // ✨ [Log] 記錄 AI 回應

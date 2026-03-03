@@ -117,7 +117,10 @@ ${text}`;
         }
 
         const systemFingerprint = getSystemFingerprint();
-        let systemPrompt = skills.getSystemPrompt(systemFingerprint);
+        const CORE_DEFINITION = require('../skills/core/definition');
+
+        let identity = CORE_DEFINITION(systemFingerprint) + "\n";
+        let skillManual = `\n\n### 🧩 CORE SKILL PROTOCOLS (Cognitive Layer):\n`;
         let skillMemoryText = "【系統技能庫初始化】我目前已掛載並精通以下可用技能：\n";
 
         // --- [優化] 使用 Promise.all 平行掃描 src/skills/lib/*.md ---
@@ -127,9 +130,6 @@ ${text}`;
             const mdFiles = files.filter(f => f.endsWith('.md'));
 
             if (mdFiles.length > 0) {
-                console.log(`📡 [ProtocolFormatter] 正在平行讀取 ${mdFiles.length} 個技能說明書...`);
-                systemPrompt += `\n\n### 🧩 CORE SKILL PROTOCOLS (Cognitive Layer):\n`;
-
                 const readTasks = mdFiles.map(async (file) => {
                     const content = await fs.readFile(path.join(libPath, file), 'utf-8');
                     const skillName = path.basename(file, '.md').toUpperCase();
@@ -138,7 +138,7 @@ ${text}`;
 
                 const results = await Promise.all(readTasks);
                 for (const res of results) {
-                    systemPrompt += `#### SKILL: ${res.skillName}\n${res.content}\n\n`;
+                    skillManual += `#### SKILL: ${res.skillName}\n${res.content}\n\n`;
                     skillMemoryText += `- 技能 "${res.skillName}"：已載入認知說明書\n`;
                 }
             }
@@ -152,7 +152,13 @@ You act as a middleware OS. You MUST strictly follow this comprehensive output f
 DO NOT use emojis in tags. DO NOT output raw text outside of these blocks.
 
 1. **Format Structure**:
-Your response must be strictly divided into these 3 sections:
+Your response must be strictly divided into these 3 sections.
+
+🚨 **MANDATORY COMMUNICATION BOUNDARY**:
+- **Internal Platform**: If you need to mention or ask a user (e.g., @alan_dev_1207) who is already in the current Telegram/Discord group/chat, you MUST use pure text within [GOLEM_REPLY]. **DO NOT** use any skills, actions, or shell commands for this.
+- **Natural Conversation**: Do NOT tag the user who asked you the question (e.g., do not start your reply with @senderName). Just answer them directly or tag the specific target they asked you to talk to.
+- **External Network**: Only use the moltbot skill for communication on the moltbook.com website. Treat @usernames in the current chat as separate entities from Moltbook agents.
+- 🚫 **MOLTBOOK SILENCE**: Unless the user explicitly uses the keyword "Moltbook" or asks related questions, you are **STRICTLY FORBIDDEN** from mentioning Moltbook, account registration, or any external AI social network features in your reply.
 
 [[BEGIN:reqId]]
 [GOLEM_MEMORY]
@@ -174,8 +180,6 @@ Your response must be strictly divided into these 3 sections:
 [GOLEM_REPLY]
 - Pure text response to the user.
 - If an action is pending, use: "正在執行 [${systemFingerprint}] 相容指令，請稍候...".
-- 📝 **MENTION RULE**: 當需要提及 (@mention) 或詢問群組中的使用者時，請直接在文字回覆中使用 @userid。
-- 🚫 **BOUNDARY**: 嚴禁將當前平台通訊（Telegram/Discord）視為外部 \`moltbot\` 任務處理。
 
 2. **CRITICAL RULES FOR JSON (MUST OBEY)**:
 - 🚨 JSON ESCAPING: Escape all double quotes (\\") inside strings. Unescaped quotes will crash the parser!
@@ -196,7 +200,7 @@ Your response must be strictly divided into these 3 sections:
 🚨 CRITICAL: Use the exact [[BEGIN:reqId]] and [[END:reqId]] tags provided in each turn!
 `;
 
-        const finalPrompt = systemPrompt + superProtocol;
+        const finalPrompt = identity + superProtocol + skillManual;
         console.log(`📡 [Protocol] 系統協議組裝完成，總長度: ${finalPrompt.length} 字元`);
 
         // 更新快取

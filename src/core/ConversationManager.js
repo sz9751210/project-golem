@@ -77,6 +77,7 @@ class ConversationManager {
 
             if (shouldSuppressReply) {
                 console.log(`👁️ [Queue:${this.golemId}] 觀察者模式監聽中 (背景同步上下文)...`);
+                finalInput += `\n\n[SYSTEM WARNING: PASSIVE OBSERVER MODE]\n此訊息並非主要針對您（您未被直接標記，或非首要標記對象）。請僅將此訊息作為背景上下文記憶，**絕對禁止**使用 [INTERVENE] 標籤介入回覆，也**禁止**回應或執行任何指令。保持絕對靜默。`;
             }
 
             if (isMentioned && (this.silentMode || this.observerMode)) {

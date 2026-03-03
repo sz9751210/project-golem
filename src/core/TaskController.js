@@ -64,11 +64,11 @@ class TaskController {
                 this.pendingTasks.set(approvalId, {
                     steps, nextIndex: i, ctx, timestamp: Date.now()
                 });
-                const cmdBlock = cmdToRun ? `\n\`\`\`shell\n${cmdToRun}\n\`\`\`` : "";
+                const cmdBlock = cmdToRun ? `\n<pre><code>${cmdToRun}</code></pre>` : "";
                 await ctx.reply(
-                    `⚠️ ${risk.level === 'DANGER' ? '🔴 危險指令' : '🟡 警告'}\n${cmdBlock}\n\n${risk.reason}`,
+                    `⚠️ <b>${risk.level === 'DANGER' ? '🔴 危險指令' : '🟡 警告'}</b>\n${cmdBlock}\n\n${risk.reason}`,
                     {
-                        parse_mode: 'Markdown',
+                        parse_mode: 'HTML',
                         disable_web_page_preview: true,
                         reply_markup: {
                             inline_keyboard: [[

@@ -19,15 +19,52 @@ class UniversalContext {
      */
     isMentioned(text) {
         if (!text) return false;
+
         if (this.platform === 'telegram') {
             const username = this.instance.username;
             if (!username) return false;
-            return text.toLowerCase().includes(`@${username.toLowerCase()}`);
+
+            // 1. 如果是直接回覆此 Bot 的訊息，無條件視為被標記
+            const replyMsg = this.event.reply_to_message || (this.event.message && this.event.message.reply_to_message);
+            if (replyMsg && replyMsg.from && replyMsg.from.username === username) {
+                return true;
+            }
+
+            // 2. 檢查純文本標記，解決 Multi-Bot Cross-talk
+            // 只有當本 Bot 是文字中「第一個」出現的標記時，才視為主要呼叫對象
+            const botTag = `@${username.toLowerCase()}`;
+            const textLower = text.toLowerCase();
+            const firstMentionIndex = textLower.indexOf('@');
+            const myMentionIndex = textLower.indexOf(botTag);
+
+            if (myMentionIndex !== -1) {
+                // 如果我是第一個標記，或者是唯一的標記 (這兩個 index 會相等)
+                return myMentionIndex === firstMentionIndex;
+            }
+            return false;
         }
+
         if (this.platform === 'discord') {
             const botId = this.instance.user?.id;
             if (!botId) return false;
-            return text.includes(`<@${botId}>`) || text.includes(`<@!${botId}>`);
+
+            const replyMsg = this.event.reference?.messageId ? this.event.channel.messages.cache.get(this.event.reference.messageId) : null;
+            if (replyMsg && replyMsg.author.id === botId) {
+                return true;
+            }
+
+            const tag1 = `<@${botId}>`;
+            const tag2 = `<@!${botId}>`;
+            const firstMentionIndex = text.indexOf('<@');
+            const myMentionIndex1 = text.indexOf(tag1);
+            const myMentionIndex2 = text.indexOf(tag2);
+
+            const myIndex = myMentionIndex1 !== -1 ? myMentionIndex1 : myMentionIndex2;
+
+            if (myIndex !== -1) {
+                return myIndex === firstMentionIndex;
+            }
+            return false;
         }
         return false;
     }
