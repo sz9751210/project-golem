@@ -370,9 +370,9 @@ async function handleUnifiedMessage(ctx, forceTargetId = null) {
 
         // ✨ [群組模式身分與回覆注入]
         const isGroupMode = CONFIG.TG_AUTH_MODE === 'CHAT' && ctx.platform === 'telegram';
-        let senderPrefix = isGroupMode ? `【發話者：${ctx.senderName}】\n` : "";
+        let senderPrefix = isGroupMode ? `[${ctx.senderName}]: ` : "";
         if (ctx.replyToName) {
-            senderPrefix += `【回覆給：${ctx.replyToName}】\n`;
+            senderPrefix += `(回覆 ${ctx.replyToName}) `;
         }
 
         if (attachment) {

@@ -1,4 +1,5 @@
 const { v4: uuidv4 } = require('uuid');
+const ResponseParser = require('../utils/ResponseParser');
 
 // ============================================================
 // 🚦 Conversation Manager (隊列與防抖系統 - 多用戶隔離版)
@@ -70,6 +71,14 @@ class ConversationManager {
             }
 
             const raw = await this.brain.sendMessage(finalInput);
+
+            // 🤫 AI 書記官靜默攔截：檢查 AI 是否決定不發言
+            const parsed = ResponseParser.parse(raw);
+            if (parsed.isSilent) {
+                console.log(`🤫 [Queue:${this.golemId}] AI 書記官判斷靜默，不發送回覆。`);
+                return;
+            }
+
             await this.NeuroShunter.dispatch(task.ctx, raw, this.brain, this.controller);
         } catch (e) {
             console.error("❌ [Queue] 處理失敗:", e);

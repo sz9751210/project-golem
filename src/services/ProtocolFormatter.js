@@ -59,6 +59,7 @@ class ProtocolFormatter {
 7. ReAct: If you use [GOLEM_ACTION], DO NOT guess the result in [GOLEM_REPLY]. Wait for Observation.
 8. SKILL DISCOVERY: You can check skill files in \`src/skills/lib\` and memorize their usage in [GOLEM_MEMORY].
 9. WORKSPACE: If you cannot access Google Workspace (@Google Drive/Keep/etc.), explicitly tell the user to enable the extension.
+10. SILENCE PROTOCOL: If you are in group observation mode and decide NOT to respond, your ENTIRE output must be exactly: [SILENT] — Do NOT wrap it in [[BEGIN]]/[[END]] or any other tags. No extra text allowed.
 
 [USER INPUT / SYSTEM MESSAGE]
 ${text}`;
