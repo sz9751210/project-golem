@@ -53,7 +53,7 @@ class WebServer {
         });
 
         // Ensure /dashboard and sub-routes are handled for SPA
-        const dashboardRoutes = ['/dashboard', '/dashboard/terminal', '/dashboard/agents', '/dashboard/office'];
+        const dashboardRoutes = ['/dashboard', '/dashboard/terminal', '/dashboard/agents', '/dashboard/office', '/dashboard/todos'];
         dashboardRoutes.forEach(route => {
             this.app.get(route, (req, res) => {
                 const fileName = route === '/dashboard' ? 'dashboard.html' : `${route.replace(/^\//, '')}.html`;
@@ -518,6 +518,148 @@ class WebServer {
                 return res.status(500).json({ error: e.message });
             }
         });
+
+        // ─── Todos API ────────────────────────────────────────────────────────
+
+        const TODOS_FILE = path.resolve(process.cwd(), '.todos.json');
+        const ARCHIVE_FILE = path.resolve(process.cwd(), '.todos_archive.json');
+
+        const readTodos = () => {
+            try { return fs.existsSync(TODOS_FILE) ? JSON.parse(fs.readFileSync(TODOS_FILE, 'utf8')) : []; } catch (e) { return []; }
+        };
+        const writeTodos = (todos) => fs.writeFileSync(TODOS_FILE, JSON.stringify(todos, null, 2));
+        const readArchive = () => {
+            try { return fs.existsSync(ARCHIVE_FILE) ? JSON.parse(fs.readFileSync(ARCHIVE_FILE, 'utf8')) : []; } catch (e) { return []; }
+        };
+        const writeArchive = (items) => fs.writeFileSync(ARCHIVE_FILE, JSON.stringify(items, null, 2));
+        const genId = () => `todo_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+
+        // 觸發 Golem 分析 (fire-and-forget)
+        const triggerGolemAnalysis = async (todo, golemId) => {
+            const context = this.contexts.get(golemId) || (this.contexts.size > 0 ? [...this.contexts.values()][0] : null);
+            if (!context?.brain) return;
+            try {
+                const prompt = `【任務分析指令】使用者新增了一個待辦任務，請用 1-2 句話給出簡短可行的建議或分析，不需要標題，直接給建議內容：\n任務：${todo.title}${todo.description ? `\n描述：${todo.description}` : ''}`;
+                const raw = await context.brain.sendMessage(prompt, false);
+                const suggestion = (raw || '').replace(/\[.*?\]/g, '').trim().slice(0, 300);
+                const todos = readTodos();
+                const idx = todos.findIndex(t => t.id === todo.id);
+                if (idx !== -1) {
+                    todos[idx].suggestion = suggestion;
+                    todos[idx].updatedAt = Date.now();
+                    writeTodos(todos);
+                    this.io.emit('todo_update', { action: 'updated', todo: todos[idx] });
+                }
+            } catch (e) {
+                console.warn(`⚠️ [Todos] Golem 分析失敗: ${e.message}`);
+            }
+        };
+
+        // 觸發 Golem 執行任務 (fire-and-forget)
+        const triggerGolemExecution = async (todo, golemId) => {
+            const context = this.contexts.get(golemId) || (this.contexts.size > 0 ? [...this.contexts.values()][0] : null);
+            if (!context?.brain) return;
+            try {
+                const prompt = `【任務執行指令】請執行以下任務並給出完整的執行結果或成品：\n任務：${todo.title}${todo.description ? `\n描述：${todo.description}` : ''}`;
+                const raw = await context.brain.sendMessage(prompt, false);
+                const result = (raw || '').trim().slice(0, 1000);
+                const todos = readTodos();
+                const idx = todos.findIndex(t => t.id === todo.id);
+                if (idx !== -1) {
+                    todos[idx].status = 'review';
+                    todos[idx].result = result;
+                    todos[idx].updatedAt = Date.now();
+                    writeTodos(todos);
+                    this.io.emit('todo_update', { action: 'updated', todo: todos[idx] });
+                    console.log(`✅ [Todos] Golem 完成任務 "${todo.title}"，已移至待確認`);
+                }
+            } catch (e) {
+                console.warn(`⚠️ [Todos] Golem 執行失敗: ${e.message}`);
+                // 還是移到 review，讓使用者知道
+                const todos = readTodos();
+                const idx = todos.findIndex(t => t.id === todo.id);
+                if (idx !== -1) {
+                    todos[idx].status = 'review';
+                    todos[idx].result = `執行時發生錯誤：${e.message}`;
+                    todos[idx].updatedAt = Date.now();
+                    writeTodos(todos);
+                    this.io.emit('todo_update', { action: 'updated', todo: todos[idx] });
+                }
+            }
+        };
+
+        this.app.get('/api/todos', (req, res) => {
+            res.json(readTodos());
+        });
+
+        this.app.post('/api/todos', (req, res) => {
+            const { title, description = '', golemId = '' } = req.body;
+            if (!title?.trim()) return res.status(400).json({ error: 'Missing title' });
+            const todo = { id: genId(), title: title.trim(), description, status: 'backlog', golemId, suggestion: '', result: '', createdAt: Date.now(), updatedAt: Date.now() };
+            const todos = readTodos();
+            todos.push(todo);
+            writeTodos(todos);
+            this.io.emit('todo_update', { action: 'added', todo });
+            res.json(todo);
+            // 非同步分析
+            triggerGolemAnalysis(todo, golemId);
+        });
+
+        this.app.patch('/api/todos/:id', (req, res) => {
+            const { id } = req.params;
+            const todos = readTodos();
+            const idx = todos.findIndex(t => t.id === id);
+            if (idx === -1) return res.status(404).json({ error: 'Not found' });
+
+            const prevStatus = todos[idx].status;
+            Object.assign(todos[idx], req.body, { updatedAt: Date.now() });
+            writeTodos(todos);
+            this.io.emit('todo_update', { action: 'updated', todo: todos[idx] });
+            res.json(todos[idx]);
+
+            // 拖入 Doing → 觸發 Golem 執行
+            if (req.body.status === 'doing' && prevStatus !== 'doing') {
+                triggerGolemExecution(todos[idx], todos[idx].golemId);
+            }
+        });
+
+        this.app.delete('/api/todos/:id', (req, res) => {
+            const { id } = req.params;
+            let todos = readTodos();
+            const todo = todos.find(t => t.id === id);
+            if (!todo) return res.status(404).json({ error: 'Not found' });
+            todos = todos.filter(t => t.id !== id);
+            writeTodos(todos);
+            this.io.emit('todo_update', { action: 'deleted', id });
+            res.json({ success: true });
+        });
+
+        this.app.post('/api/todos/:id/archive', (req, res) => {
+            const { id } = req.params;
+            let todos = readTodos();
+            const todo = todos.find(t => t.id === id);
+            if (!todo) return res.status(404).json({ error: 'Not found' });
+            todos = todos.filter(t => t.id !== id);
+            writeTodos(todos);
+            const archive = readArchive();
+            archive.unshift({ ...todo, archivedAt: Date.now() });
+            writeArchive(archive);
+            this.io.emit('todo_update', { action: 'deleted', id });
+            this.io.emit('archive_update', { action: 'added', todo: archive[0] });
+            res.json({ success: true });
+        });
+
+        this.app.get('/api/todos/archive', (req, res) => {
+            res.json(readArchive());
+        });
+
+        this.app.delete('/api/todos/archive/all', (req, res) => {
+            writeArchive([]);
+            this.io.emit('archive_update', { action: 'cleared' });
+            res.json({ success: true });
+        });
+
+        // ─── System ───────────────────────────────────────────────────────────
 
         this.app.post('/api/system/reload', (req, res) => {
             console.log("🔄 [WebServer] Received reload request. Restarting system...");

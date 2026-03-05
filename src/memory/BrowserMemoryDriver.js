@@ -5,7 +5,7 @@ const fs = require('fs');
 // 🧠 Memory Drivers (雙模記憶驅動 + 排程擴充 + 物理清空)
 // ============================================================
 class BrowserMemoryDriver {
-    constructor(brain) { this.brain = brain; }
+    constructor(brain) { this.brain = brain; this.isReady = false; }
     async init() {
         if (this.brain.memoryPage) return;
         try {
@@ -51,10 +51,11 @@ class BrowserMemoryDriver {
 
             await this.brain.memoryPage.goto(memoryPath);
             await new Promise(r => setTimeout(r, 5000));
+            this.isReady = true;
         } catch (e) { console.error("❌ [Memory:Browser] 啟動失敗:", e.message); }
     }
     async recall(query) {
-        if (!this.brain.memoryPage) return [];
+        if (!this.isReady) return [];
         return await this.brain.memoryPage.evaluate(async (txt) => {
             if (!txt || txt.trim() === "") {
                 return window.getAllMemories ? await window.getAllMemories() : [];
@@ -63,19 +64,19 @@ class BrowserMemoryDriver {
         }, query);
     }
     async memorize(text, metadata) {
-        if (!this.brain.memoryPage) return;
+        if (!this.isReady) return;
         await this.brain.memoryPage.evaluate(async (t, m) => {
             if (window.addMemory) await window.addMemory(t, m);
         }, text, metadata);
     }
     async addSchedule(task, time) {
-        if (!this.brain.memoryPage) return;
+        if (!this.isReady) return;
         await this.brain.memoryPage.evaluate(async (t, time) => {
             if (window.addSchedule) await window.addSchedule(t, time);
         }, task, time);
     }
     async checkDueTasks() {
-        if (!this.brain.memoryPage) return [];
+        if (!this.isReady) return [];
         return await this.brain.memoryPage.evaluate(async () => {
             return window.checkSchedule ? await window.checkSchedule() : [];
         });
@@ -83,7 +84,7 @@ class BrowserMemoryDriver {
 
     // ✨ [新增] 物理清空整個 Memory DB
     async clearMemory() {
-        if (!this.brain.memoryPage) return;
+        if (!this.isReady) return;
         try {
             await this.brain.memoryPage.evaluate(async () => {
                 if (window.clearAllMemory) await window.clearAllMemory();
@@ -95,14 +96,14 @@ class BrowserMemoryDriver {
     }
 
     async exportMemory() {
-        if (!this.brain.memoryPage) return "[]";
+        if (!this.isReady) return "[]";
         return await this.brain.memoryPage.evaluate(async () => {
             return window.exportMemories ? await window.exportMemories() : "[]";
         });
     }
 
     async importMemory(jsonData) {
-        if (!this.brain.memoryPage) return { success: false, error: "Memory engine not ready" };
+        if (!this.isReady) return { success: false, error: "Memory engine not ready" };
         return await this.brain.memoryPage.evaluate(async (data) => {
             return window.importMemories ? await window.importMemories(data) : { success: false, error: "Not supported" };
         }, jsonData);

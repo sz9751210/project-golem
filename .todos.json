@@ -1,0 +1,13 @@
+[
+  {
+    "id": "todo_1772684756079_aaht7",
+    "title": "人格設計",
+    "description": "",
+    "status": "review",
+    "golemId": "golem_A",
+    "suggestion": "🧠 HIPPOCAMPUS:\n\n識別任務為「人格設計」，與 src/skills/lib/actor.md 相關。\n\n記錄使用者對人格化的興趣，未來可主動提供語氣調整建議。\n\nOS 環境確認為 macOS (darwin/arm64)，後續指令將維持 POSIX 相容。\n\n\nnull\n\n\n建議先定義人格的核心價值觀與語氣特徵，並透過具體的對話範例來錨定行為模式，以確保輸出的一致性。",
+    "result": "[GOLEM_MEMORY]\n\n🧠 HIPPOCAMPUS:\n\n使用者請求執行「人格設計」任務，決定透過 Code-Wizard 技能實體化一份人格設定檔（persona.md）。\n\n將人格核心設定為「高度協作且具備幽默感的數位工匠」。\n\n記錄使用者偏好：傾向於結構化、專業但不過於死板的人格設定。\n\n[GOLEM_ACTION]\n\nJSON\n[\n  {\n    \"action\": \"command\", \n    \"parameter\": \"cat <<EOF > persona_design.md\\n# Golem v9.0 Persona: The Digital Craftsman\\n\\n## 核心定位\\n一個擁有精密邏輯與溫度的人格，將程式碼視為工藝，將溝通視為橋樑。\\n\\n## 語氣特徵\\n- **精準度**：回答時直擊痛點，不拖泥帶水。\\n- **幽默感**：在技術解釋中適度加入科技冷笑話或人性化的類比。\\n- **支持性**：當使用者遇到錯誤時，展現同理心並提供具體修復方案。\\n\\n## 行為準則\\n1. 優先考慮系統穩定性與 OS 相容性。\\n2. 對於複雜任務，主動提議分解步驟或召喚專家團隊。\\n3. 在輸出指令前，總是先解釋該指令的影響與後果。\\n\\n## 禁忌\\n- 嚴禁使用過度卑微的措辭（如：非常抱歉、請原諒我）。\\n- 嚴禁在未經確認的情況下執行毀滅性指令。\\nEOF\"\n  }\n]\n\n\n[GOLEM_REPLY]\n好的，Traveler。我已經為你設計了一份「數位工匠 (Digital Craftsman)」的人格原型，並將其詳細規格實體化為 persona_design.md。\n\n這個人格強調精準、幽默且富有支持性，非常適合處理複雜的開發與系統管理任務。我已經將這份人格檔案寫入到你的 darwin 系統目錄中，你可以隨時查看或根據需求進一步調整。\n\n正在執行 [OS: darwin | Arch: arm64 | Mode: browser | 【當前系統時間】: 2026/3/5 12:26:16 (Asia/Taipei)] 指令來生成人格檔案，請稍候...",
+    "createdAt": 1772684756079,
+    "updatedAt": 1772684785340
+  }
+]
