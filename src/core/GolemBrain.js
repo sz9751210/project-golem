@@ -65,7 +65,8 @@ class GolemBrain {
 
             this.browser = await BrowserLauncher.launch({
                 userDataDir: this.userDataDir,
-                headless: process.env.PUPPETEER_HEADLESS,
+                // 向後相容：同時支援新舊環境變數名稱
+                headless: process.env.PLAYWRIGHT_HEADLESS || process.env.PUPPETEER_HEADLESS,
             });
         }
 
@@ -73,7 +74,8 @@ class GolemBrain {
         if (!this.page) {
             const pages = await this.browser.pages();
             this.page = pages.length > 0 ? pages[0] : await this.browser.newPage();
-            await this.page.goto(URLS.GEMINI_APP, { waitUntil: 'networkidle2' });
+            // Playwright 使用 'networkidle' (無數字後綴)
+            await this.page.goto(URLS.GEMINI_APP, { waitUntil: 'networkidle' });
             isNewSession = true;
         }
 
@@ -95,7 +97,8 @@ class GolemBrain {
     async setupCDP() {
         if (this.cdpSession) return;
         try {
-            this.cdpSession = await this.page.target().createCDPSession();
+            // Playwright: page.context().newCDPSession(page) 取代 page.target().createCDPSession()
+            this.cdpSession = await this.page.context().newCDPSession(this.page);
             await this.cdpSession.send('Network.enable');
             console.log("🔌 [CDP] 網路神經連結已建立 (Neuro-Link Active)");
         } catch (e) {

@@ -8,7 +8,7 @@ class ResponseExtractor {
      * 在瀏覽器內等待 AI 回應信封完成
      * (此函式會傳入 page.evaluate 在瀏覽器上下文中執行)
      *
-     * @param {import('puppeteer').Page} page - Puppeteer 頁面實例
+     * @param {import('playwright').Page} page - Playwright 頁面實例
      * @param {string} selector - 回應氣泡的 CSS Selector
      * @param {string} startTag - 信封開始標籤
      * @param {string} endTag - 信封結束標籤

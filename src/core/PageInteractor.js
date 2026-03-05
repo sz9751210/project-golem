@@ -6,7 +6,7 @@ const ResponseExtractor = require('./ResponseExtractor');
 
 class PageInteractor {
     /**
-     * @param {import('puppeteer').Page} page - Puppeteer 頁面實例
+     * @param {import('playwright').Page} page - Playwright 頁面實例
      * @param {import('../services/DOMDoctor')} doctor - DOM 修復服務
      */
     constructor(page, doctor) {
@@ -170,8 +170,9 @@ class PageInteractor {
 
             await inputEl.focus();
 
-            await this.page.keyboard.type(summonWord, { delay: 100 });
-            await new Promise(r => setTimeout(r, 1500));
+            await this.page.keyboard.type(summonWord);
+            // Playwright 無 delay 選項，改用 waitForTimeout 模擬輸入間距
+            await this.page.waitForTimeout(1500);
             await this.page.keyboard.press('Enter');
             await new Promise(r => setTimeout(r, 500));
 

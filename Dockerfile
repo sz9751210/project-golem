@@ -1,7 +1,7 @@
 # Base image with Node.js 20 (Slim version for smaller size & multi-arch support)
 FROM node:20-slim
 
-# Install system dependencies for Puppeteer (Chromium)
+# Install system dependencies for Playwright / Chromium
 RUN apt-get update && apt-get install -y \
     chromium \
     fonts-liberation \
@@ -47,9 +47,9 @@ WORKDIR /app
 # Copy root package files
 COPY package*.json ./
 
-# Skip downloading Chrome and use installed Chromium
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
-    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+# Install Playwright and download Chromium browser
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+RUN npx playwright install chromium --with-deps
 
 # Install root production dependencies
 RUN npm ci --omit=dev

@@ -32,6 +32,7 @@ const BROWSER_ARGS = Object.freeze([
     '--disable-setuid-sandbox',
     '--window-size=1280,900',
     '--disable-gpu',
+    '--disable-blink-features=AutomationControlled', // Playwright stealth
 ]);
 
 /** Chrome Lock 檔案名稱 */
