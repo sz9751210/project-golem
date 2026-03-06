@@ -21,28 +21,39 @@ class EnvManager {
             return {};
         }
 
-        const content = fs.readFileSync(this.envPath, 'utf8');
-        const envObj = {};
-
-        content.split('\n').forEach(line => {
-            // 略過純註解或空行
-            if (!line || line.trim().startsWith('#')) return;
-
-            const match = line.match(/^([^=]+)=(.*)$/);
-            if (match) {
-                const key = match[1].trim();
-                let value = match[2].trim();
-
-                // 移除外圍雙引號/單引號 if any
-                if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
-                    value = value.slice(1, -1);
-                }
-
-                envObj[key] = value;
+        try {
+            const stats = fs.statSync(this.envPath);
+            if (stats.isDirectory()) {
+                console.error(`❌ [EnvManager] Error: '${this.envPath}' is a directory, expected a file.`);
+                return {};
             }
-        });
 
-        return envObj;
+            const content = fs.readFileSync(this.envPath, 'utf8');
+            const envObj = {};
+
+            content.split('\n').forEach(line => {
+                // 略過純註解或空行
+                if (!line || line.trim().startsWith('#')) return;
+
+                const match = line.match(/^([^=]+)=(.*)$/);
+                if (match) {
+                    const key = match[1].trim();
+                    let value = match[2].trim();
+
+                    // 移除外圍雙引號/單引號 if any
+                    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+                        value = value.slice(1, -1);
+                    }
+
+                    envObj[key] = value;
+                }
+            });
+
+            return envObj;
+        } catch (e) {
+            console.error(`❌ [EnvManager] Failed to read .env:`, e.message);
+            return {};
+        }
     }
 
     /**

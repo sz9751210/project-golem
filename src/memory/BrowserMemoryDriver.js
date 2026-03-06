@@ -12,14 +12,14 @@ class BrowserMemoryDriver {
             this.brain.memoryPage = await this.brain.browser.newPage();
 
             // ─── 記憶頁面實體隔離 ───
-            const baseDir = process.env.HOST_PROJECT_DIR || process.cwd();
-            const sourceHtmlPath = path.join(baseDir, 'memory.html');
+            const internalBaseDir = process.cwd();
+            const sourceHtmlPath = path.join(internalBaseDir, 'memory.html');
             const targetDir = this.brain.chatLogManager
                 ? this.brain.chatLogManager.logDir
-                : path.join(baseDir, 'logs', this.brain.golemId);
+                : path.join(internalBaseDir, 'logs', this.brain.golemId);
             const targetHtmlPath = path.join(targetDir, 'memory.html');
 
-            // 確保目標資料夾存在
+            // 確保目標資料夾存在 (內部路徑)
             if (!fs.existsSync(targetDir)) {
                 fs.mkdirSync(targetDir, { recursive: true });
             }
@@ -41,7 +41,21 @@ class BrowserMemoryDriver {
                 fs.writeFileSync(targetHtmlPath, htmlContent);
             }
 
-            const memoryPath = 'file:///' + targetHtmlPath.replace(/\\/g, '/');
+            let finalHtmlPath = targetHtmlPath;
+            const remotePort = process.env.PUPPETEER_REMOTE_DEBUGGING_PORT;
+            const hostDir = process.env.HOST_PROJECT_DIR;
+
+            // ─── 跨維度路徑翻譯 (Docker -> Host) ───
+            // 如果連向遠端瀏覽器且有提供宿主機路徑，則將 /app/ 轉換為宿主機路徑
+            if (remotePort && hostDir) {
+                if (finalHtmlPath.startsWith('/app/')) {
+                    finalHtmlPath = path.join(hostDir, finalHtmlPath.replace('/app/', ''));
+                } else if (finalHtmlPath.startsWith('/app')) {
+                    finalHtmlPath = path.join(hostDir, finalHtmlPath.replace('/app', ''));
+                }
+            }
+
+            const memoryPath = (finalHtmlPath.startsWith('/') ? 'file://' : 'file:///') + finalHtmlPath.replace(/\\/g, '/');
             console.log(`🧠 [Memory:Browser] 正在掛載神經海馬迴: ${memoryPath} (Golem: ${this.brain.golemId})`);
 
             // Forward console logs from Puppeteer to the Node backend

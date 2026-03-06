@@ -25,6 +25,8 @@ show_menu() {
     options+=("Stop|🛑 停止系統 (Stop All Processes)")
     options+=("Install|📦 安裝與更新 (Install Deps & Build)")
     options+=("Init|🧹 完全初始化 (Reset System)")
+    options+=("Docker|🐳 Docker 啟動模式 (Run with Docker)")
+    options+=("DockerClean|🧹 Docker 環境清理 (Down & Prune)")
     options+=("Quit|🚪 退出")
 
     prompt_singleselect "" "${options[@]}"
@@ -34,8 +36,10 @@ show_menu() {
         "Start")   launch_system ;;
         "Stop")    stop_system; show_menu ;;
         "Install") run_full_install ;;
-        "Init")    run_clean_init; show_menu ;;
-        "Quit")    echo -e "  ${GREEN}👋 再見！${NC}"; exit 0 ;;
+        "Init")        run_clean_init; show_menu ;;
+        "Docker")      launch_docker ;;
+        "DockerClean") clean_docker ;;
+        "Quit")        echo -e "  ${GREEN}👋 再見！${NC}"; exit 0 ;;
         *)         show_menu ;;
     esac
 }
@@ -80,6 +84,26 @@ stop_system() {
         echo "$golem_pids" | xargs kill 2>/dev/null
         echo -e "  ${GREEN}✅ 殘留 Node.js 程序已終止${NC}"
         killed=1
+    fi
+
+    # 4. Docker Cleanup
+    if [ -f "$SCRIPT_DIR/docker-compose.yml" ] && command -v docker &>/dev/null; then
+        if docker compose ps --format json | grep -q '"State":"running"'; then
+            echo ""
+            if confirm_action "偵測到 Docker 容器正在運行，是否要停止 Docker 服務?"; then
+                local down_args=""
+                if confirm_action "是否要一併移除 Docker Volumes (清除持久化資料)?"; then
+                    down_args="-v"
+                fi
+                echo -e "  ${CYAN}正在關閉 Docker 容器...${NC}"
+                if docker compose down $down_args; then
+                    echo -e "  ${GREEN}✅ Docker 容器已停止${NC}"
+                    killed=1
+                else
+                    echo -e "  ${RED}❌ Docker 關閉失敗${NC}"
+                fi
+            fi
+        fi
     fi
 
     if [ "$killed" -eq 0 ]; then

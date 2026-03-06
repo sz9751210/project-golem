@@ -28,16 +28,38 @@ launch_docker() {
     mkdir -p "$SCRIPT_DIR/golem_memory" "$SCRIPT_DIR/logs"
 
     if grep -q "PUPPETEER_REMOTE_DEBUGGING_PORT" "$DOT_ENV_PATH"; then
-        echo -e "  ${CYAN}🔌 偵測到遠端除錯設定，正在啟動主機 Chrome...${NC}"
-        "$SCRIPT_DIR/scripts/start-host-chrome.sh" &
-        HOST_CHROME_PID=$!
-        sleep 2
+        local port=$(grep "^PUPPETEER_REMOTE_DEBUGGING_PORT=" "$DOT_ENV_PATH" | cut -d'=' -f2 | tr -d ' ')
+        port=${port:-9222}
+
+        echo -e "  ${CYAN}🔌 檢查主機 Chrome 偵錯模式 (Port $port)...${NC}"
+        if ! lsof -i :$port >/dev/null 2>&1; then
+            echo -e "  ${YELLOW}⚠️  主機 Chrome 偵錯模式尚未啟動${NC}"
+            if confirm_action "是否要立刻啟動主機 Chrome？"; then
+                "$SCRIPT_DIR/scripts/start-host-chrome.sh" &
+                echo -e "  ${DIM}   等待 Chrome 啟動...${NC}"
+                sleep 3
+            else
+                echo -e "  ${DIM}   跳過啟動，Golem 將嘗試使用內建瀏覽器 (Headless)${NC}"
+            fi
+        else
+            echo -e "  ${GREEN}✅ 主機 Chrome 偵錯模式運行中${NC}"
+        fi
     fi
 
-    echo -e "  ${CYAN}正在建置並啟動容器... (這可能需要一點時間)${NC}\n"
+    echo -e "  ${CYAN}正在準備 Docker 環境...${NC}"
+    
+    local up_args=""
+    if confirm_action "是否要重新構建 (Build) Docker 映像檔?"; then
+        up_args="--build"
+        echo -e "  ${YELLOW}⚙️  將執行重新構建...${NC}"
+    else
+        echo -e "  ${DIM}⏩ 跳過構建，直接啟動現有映像檔...${NC}"
+    fi
+
+    echo -e "  ${CYAN}正在啟動容器...${NC}\n"
     
     # Run docker compose attached
-    if docker compose up --build; then
+    if docker compose up $up_args; then
         echo ""
         echo -e "  ${GREEN}✅ Docker 容器已停止${NC}"
     else

@@ -52,14 +52,14 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 # Install root production dependencies
-RUN npm ci --omit=dev
+RUN npm install --omit=dev
 
 # Copy web-dashboard package files
 COPY web-dashboard/package*.json ./web-dashboard/
 
 # Install web-dashboard dependencies
 WORKDIR /app/web-dashboard
-RUN npm ci
+RUN npm install
 
 # Copy web-dashboard source code (This depends on what is needed for build)
 # We copy the whole directory, relying on .dockerignore to exclude node_modules

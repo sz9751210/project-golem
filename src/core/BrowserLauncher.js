@@ -21,9 +21,19 @@ class BrowserLauncher {
     static async launch({ userDataDir, headless }) {
         const isDocker = fs.existsSync('/.dockerenv');
         const remoteDebugPort = process.env.PUPPETEER_REMOTE_DEBUGGING_PORT;
+        const remoteHost = process.env.PUPPETEER_REMOTE_HOST || 'host.docker.internal';
 
         if (isDocker && remoteDebugPort) {
-            return BrowserLauncher.connectRemote('host.docker.internal', remoteDebugPort);
+            try {
+                return await BrowserLauncher.connectRemote(remoteHost, remoteDebugPort);
+            } catch (e) {
+                console.warn(`\n⚠️  [System] Failed to connect to Remote Chrome at ${remoteHost}:${remoteDebugPort}`);
+                console.warn(`   Reason: ${e.message}`);
+                console.warn(`   💡 Fallback: Starting internal Chromium (headless mode)...`);
+                console.warn(`   (To see the browser, please ensure './scripts/start-host-chrome.sh' is running on your host)\n`);
+                // Force headless for fallback inside Docker
+                return BrowserLauncher.launchLocal(userDataDir, 'true');
+            }
         }
         return BrowserLauncher.launchLocal(userDataDir, headless);
     }

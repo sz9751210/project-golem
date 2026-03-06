@@ -184,6 +184,24 @@ chmod +x setup.sh && ./setup.sh --install
 ./setup.sh --start
 ```
 
+---
+
+### 🐳 使用 Docker 啟動 (推薦)
+
+如果你不想在本地安裝 Node.js 環境，可以使用 Docker 快速啟動：
+
+```bash
+# 1. 啟動容器 (包含 Dashboard 與 Golem)
+docker compose up -d
+
+# 2. 存取 Web Dashboard 完成初始化
+# 開啟瀏覽器存取: http://localhost:3000
+```
+
+> **提示**：Docker 模式會自動掛載 `./golem_memory` 與 `./logs` 以進行資料持久化，並掛載 `./.env` 直接取用主機配置。
+
+---
+
 **Windows 用戶**：雙擊 `setup.bat` 進入自動化安裝流程。
 
 ### 手動 `.env` 設定

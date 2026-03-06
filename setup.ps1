@@ -18,10 +18,12 @@ function Show-MainMenu {
     Write-Host '  請選擇操作模式：' -ForegroundColor Yellow
     Write-Host ''
     Write-Host '  [0] 啟動系統 (TUI 終端機 + Web 儀表板)'
+    Write-Host '  [D] 以 Docker 容器啟動 (Docker Compose)'
     Write-Host '  -------------------------------------------------------'
     Write-Host '  [1] 完整安裝與部署 (安裝依賴 + 配置 + 編譯)'
     Write-Host '  [2] 僅更新配置 (重新設定 .env)'
     Write-Host '  [3] 僅修復依賴 (重新安裝 npm 套件)'
+    Write-Host '  [4] Docker 環境清理 (停止並移除 Volume)'
     Write-Host '  [Q] 離開'
     Write-Host ''
     $choice = Read-Host '請輸入選項 (0/1/2/3/Q)'
@@ -275,7 +277,100 @@ function Launch-System {
     npm run dashboard
     Write-Host ''
     Write-Host '  [INFO] 系統已停止。'
+    Stop-Docker # Added Docker cleanup on exit
     Read-Host '按 Enter 返回主選單'
+}
+
+# ─── 啟動 Docker ──────────────────────────────────────────
+function Launch-Docker {
+    Clear-Host
+    Write-Host ''
+    Write-Host '=======================================================' -ForegroundColor Cyan
+    Write-Host '  🐳 Docker 啟動模式' -ForegroundColor Cyan
+    Write-Host '=======================================================' -ForegroundColor Cyan
+    Write-Host ''
+
+    if (-not (Test-Path 'docker-compose.yml')) {
+        Write-Host '   [ERROR] 找不到 docker-compose.yml' -ForegroundColor Red
+        Read-Host '按 Enter 返回主選單'
+        return
+    }
+
+    $ans = Read-Host '是否要重新構建 (Build) Docker 映像檔？ (y/n)'
+    $args = "up"
+    if ($ans -ieq 'y') { $args += " --build" }
+    
+    # 啟動主機 Chrome 偵錯模式
+    Start-HostChrome
+
+    Write-Host "正在執行 docker compose $args ..." -ForegroundColor Cyan
+    docker compose $args
+    
+    Write-Host ''
+    Write-Host '  [INFO] Docker 容器已停止。' -ForegroundColor Yellow
+    Read-Host '按 Enter 返回主選單'
+}
+
+# ─── 啟動宿主機 Chrome 偵錯模式 ────────────────────────────
+function Start-HostChrome {
+    $port = 9222
+    $env_map = Read-EnvFile
+    if ($env_map.ContainsKey('PUPPETEER_REMOTE_DEBUGGING_PORT')) {
+        $port = $env_map['PUPPETEER_REMOTE_DEBUGGING_PORT']
+    }
+
+    Write-Host "  🔌 檢查主機 Chrome 偵測模式 (Port $port)..." -ForegroundColor Cyan
+    
+    $tcpConnection = Get-NetTCPConnection -LocalPort $port -ErrorAction SilentlyContinue | Where-Object { $_.State -eq 'Listen' }
+    if ($tcpConnection) {
+        Write-Host "   [OK] 主機 Chrome 偵錯模式已在運行中。" -ForegroundColor Green
+        return
+    }
+
+    Write-Host "   [WARN] 主機 Chrome 偵錯模式尚未啟動。" -ForegroundColor Yellow
+    $ans = Read-Host '是否要立刻啟動主機 Chrome？ (y/n)'
+    if ($ans -ieq 'y') {
+        $chromePaths = @(
+            "${env:ProgramFiles}\Google\Chrome\Application\chrome.exe",
+            "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe",
+            "${env:LocalAppData}\Google\Chrome\Application\chrome.exe"
+        )
+        $chromePath = $null
+        foreach ($p in $chromePaths) {
+            if (Test-Path $p) { $chromePath = $p; break }
+        }
+
+        if ($null -eq $chromePath) {
+            Write-Host '   [ERROR] 找不到 Google Chrome 安裝路徑。' -ForegroundColor Red
+            return
+        }
+
+        $userDataDir = Join-Path $env:TEMP 'remote-profile'
+        if (-not (Test-Path $userDataDir)) { New-Item -Path $userDataDir -ItemType Directory }
+
+        Write-Host "   🚀 啟動 Chrome (Port $port)..." -ForegroundColor Cyan
+        Start-Process $chromePath -ArgumentList "--remote-debugging-port=$port", "--remote-debugging-address=0.0.0.0", "--remote-allow-origins=*", "--no-first-run", "--no-default-browser-check", "--user-data-dir=$userDataDir"
+        Start-Sleep -Seconds 3
+    }
+}
+# ─── 停止 Docker ──────────────────────────────────────────
+function Stop-Docker {
+    if (Test-Path 'docker-compose.yml') {
+        $running = docker compose ps --format json | ConvertFrom-Json -ErrorAction SilentlyContinue
+        if ($running) {
+            Write-Host ''
+            $ans = Read-Host '偵測到 Docker 容器可能正在運行，是否要停止 Docker 服務? (y/n)'
+            if ($ans -ieq 'y') {
+                $v_ans = Read-Host '是否要一併移除 Docker Volumes (清除持久化資料)? (y/n)'
+                $args = "down"
+                if ($v_ans -ieq 'y') { $args += " -v" }
+                
+                Write-Host "正在執行 docker compose $args ..." -ForegroundColor Cyan
+                docker compose $args
+                Write-Host '   [OK] Docker 容器已處理。' -ForegroundColor Green
+            }
+        }
+    }
 }
 
 # ─── 完整安裝流程 ────────────────────────────────────────
@@ -300,6 +395,7 @@ while ($true) {
         '1' { Run-FullInstall }
         '2' { $null = Step-CheckEnv; Start-ConfigWizard -FromMenu }
         '3' { Step-InstallCore; Read-Host '按 Enter 返回主選單' }
+        '4' { Stop-Docker; Read-Host '按 Enter 返回主選單' }
         'Q' { exit 0 }
         default { Write-Host '  無效選項，請重新輸入。' -ForegroundColor Red; Start-Sleep 1 }
     }
