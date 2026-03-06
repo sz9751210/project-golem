@@ -59,9 +59,7 @@ ENVEOF
     echo ""
 }
 
-# ─── Step 3: Config Wizard (simplified — Bot configs now in Web Dashboard) ───
-config_wizard() {
-    # 自動啟用 Web Dashboard，不顯示任何資訊
+    # 自動啟用 Web Dashboard
     update_env "ENABLE_WEB_DASHBOARD" "true"
     ENABLE_WEB_DASHBOARD="true"
 }

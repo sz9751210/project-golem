@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # Configuration
-PORT=9222
+PORT=9221       # Actual Chrome port (hidden behind proxy)
+PROXY_PORT=9222 # Port exposed to Docker
 USER_DATA_DIR="/tmp/remote-profile"
 
 # Auto-detect Chrome path based on OS
@@ -31,24 +32,35 @@ if [ -z "$CHROME_PATH" ] || ([ ! -f "$CHROME_PATH" ] && ! command -v "$CHROME_PA
     exit 1
 fi
 
-# Check if Chrome is already running on port
-if lsof -i :$PORT >/dev/null 2>&1; then
-    echo "⚠️  Chrome Remote Debugging is already active on port $PORT."
-    exit 0
+# Check if something is on the proxy port
+if lsof -i :$PROXY_PORT >/dev/null 2>&1; then
+    echo "⚠️  Port $PROXY_PORT is already in use. Attempting to restart..."
+    # Kill whatever is using the port (works on Mac)
+    lsof -ti :$PROXY_PORT | xargs kill -9 2>/dev/null
 fi
 
-echo "🚀 Launching Chrome with Remote Debugging on port $PORT..."
+echo "🚀 Launching Chrome on internal port $PORT..."
 echo "📂 User Data Dir: $USER_DATA_DIR (Temporary profile)"
 
-# Launch Chrome
+# Launch Chrome in background
 "$CHROME_PATH" \
   --remote-debugging-port=$PORT \
-  --remote-debugging-address=0.0.0.0 \
   --remote-allow-origins=* \
   --no-first-run \
   --no-default-browser-check \
   --user-data-dir="$USER_DATA_DIR" >/dev/null 2>&1 &
 
 CHROME_PID=$!
-echo "✅ Chrome launched (PID: $CHROME_PID)"
+
+# Launch Proxy
+echo "🌉 Starting CDP Proxy on port $PROXY_PORT..."
+node "$(dirname "$0")/lib/cdp-proxy.js" &
+PROXY_PID=$!
+
+# Cleanup on exit
+trap "kill $CHROME_PID $PROXY_PID 2>/dev/null" EXIT
+
+echo "✅ System ready (Chrome: $CHROME_PID, Proxy: $PROXY_PID)"
+
+# Wait for background processes
 wait $CHROME_PID

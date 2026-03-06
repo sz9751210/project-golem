@@ -18,6 +18,10 @@ launch_docker() {
          read -p "  按 Enter 返回..." show_menu; return
     fi
 
+    # 執行環境與 Key 檢查
+    step_check_env
+    config_wizard
+    
     box_line_colored "  ${GREEN}✔${NC}  Docker 環境檢查通過                                    "
     box_line_colored "  🚀 即將執行: ${BOLD}docker compose up --build${NC}                     "
     box_line_colored "  🌐 外部瀏覽器可訪問: ${BOLD}http://localhost:3000${NC}                 "
@@ -27,10 +31,12 @@ launch_docker() {
 
     mkdir -p "$SCRIPT_DIR/golem_memory" "$SCRIPT_DIR/logs"
 
-    if grep -q "PUPPETEER_REMOTE_DEBUGGING_PORT" "$DOT_ENV_PATH"; then
-        echo -e "  ${CYAN}🔌 偵測到遠端除錯設定，正在啟動主機 Chrome...${NC}"
-        "$SCRIPT_DIR/scripts/start-host-chrome.sh" &
-        HOST_CHROME_PID=$!
+    if grep -E "^PUPPETEER_REMOTE_DEBUGGING_PORT=" "$DOT_ENV_PATH" >/dev/null 2>&1; then
+        echo -e "  ${CYAN}🔌 偵測到遠端除錯設定，正在自動啟動主機 Chrome 中繼站...${NC}"
+        "$SCRIPT_DIR/scripts/start-host-chrome.sh" >/dev/null 2>&1 &
+        local CHILD_PID=$!
+        register_pid "$CHILD_PID"
+        echo -e "  ${GREEN}✅ 主機 Chrome 中繼站已在背景啟動 (PID: $CHILD_PID)${NC}"
         sleep 2
     fi
 

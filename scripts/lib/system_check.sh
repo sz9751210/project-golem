@@ -95,7 +95,7 @@ check_status() {
         # but we actually need some variables like GEMINI_API_KEYS
         # Sourcing it is fine as long as we are careful
         source "$DOT_ENV_PATH" 2>/dev/null || true
-        if [ -n "${GEMINI_API_KEYS:-}" ] && [ "$GEMINI_API_KEYS" != "你的Key1,你的Key2,你的Key3" ]; then
+        if [ -n "${GEMINI_API_KEYS:-}" ] && [[ "$GEMINI_API_KEYS" != *"你的Key"* ]]; then
             KEYS_SET=true
         fi
     fi

@@ -11,6 +11,8 @@ services:
       # Persistence for memory and logs
       - ./golem_memory:/app/golem_memory
       - ./logs:/app/logs
+      # Development source sync
+      - ./src:/app/src
       # Mount .env to allow configuration changes without rebuild
       - ./.env:/app/.env
     environment:
