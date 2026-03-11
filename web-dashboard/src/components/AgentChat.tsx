@@ -79,7 +79,7 @@ export function AgentChat() {
     }, [messages]);
 
     return (
-        <div className="flex flex-col h-full bg-gray-950 rounded-xl border border-gray-800 p-4">
+        <div className="flex flex-col h-full bg-background rounded-xl border border-border p-4">
             <div className="flex-1 overflow-y-auto space-y-4 pr-2" ref={scrollRef}>
                 {messages.map((msg) => {
                     const isUser = msg.sender === 'User';
@@ -99,15 +99,15 @@ export function AgentChat() {
                                     )}>
                                         {isUser ? <User className="w-3 h-3 text-blue-300" /> : <Bot className="w-3 h-3 text-cyan-300" />}
                                     </div>
-                                    <span className={cn("text-xs font-bold", isUser ? "text-blue-400" : "text-cyan-400")}>{msg.sender}</span>
-                                    <span className="text-[10px] text-gray-600">{msg.timestamp}</span>
+                                    <span className={cn("text-xs font-bold", isUser ? "text-blue-700 dark:text-blue-400" : "text-cyan-700 dark:text-cyan-400")}>{msg.sender}</span>
+                                    <span className="text-[10px] text-muted-foreground">{msg.timestamp}</span>
                                 </div>
                             )}
                             <div
                                 className={cn(
                                     "p-3 rounded-lg text-sm",
                                     msg.isSystem
-                                        ? "bg-gray-900 text-gray-400 text-xs border border-gray-800"
+                                        ? "bg-card text-muted-foreground text-xs border border-border"
                                         : isUser
                                             ? "bg-blue-950/30 text-blue-100 border border-blue-900/50 rounded-tr-none"
                                             : "bg-cyan-950/30 text-cyan-100 border border-cyan-900/50 rounded-tl-none"
@@ -119,7 +119,7 @@ export function AgentChat() {
                     );
                 })}
                 {messages.length === 0 && (
-                    <div className="flex items-center justify-center h-full text-gray-600 italic">
+                    <div className="flex items-center justify-center h-full text-muted-foreground italic">
                         Waiting for agent activity...
                     </div>
                 )}

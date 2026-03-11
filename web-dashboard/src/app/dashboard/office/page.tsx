@@ -34,7 +34,7 @@ type Message = ChatMessage; // Alias for clarity with the snippet
 const DEFAULT_LAYOUT: OfficeItem[] = [
     // Characters
     { id: 'user', type: 'character', name: 'user', src: '/characters/user.png', x: 8, y: 75, zIndex: 40, team: 'all', width: 192, height: 192 },
-    { id: 'alex', type: 'character', name: 'alex', src: '/characters/alex.png', x: 28, y: 65, zIndex: 30, team: 'tech', width: 176, height: 176, label: 'ALEX (FE)', labelColor: 'text-cyan-400', labelBorder: 'border-cyan-800' },
+    { id: 'alex', type: 'character', name: 'alex', src: '/characters/alex.png', x: 28, y: 65, zIndex: 30, team: 'tech', width: 176, height: 176, label: 'ALEX (FE)', labelColor: 'text-cyan-700 dark:text-cyan-400', labelBorder: 'border-cyan-800' },
     { id: 'bob', type: 'character', name: 'bob', src: '/characters/bob.png', x: 50, y: 75, zIndex: 20, team: 'tech', width: 128, height: 128, label: 'BOB (BE)', labelColor: 'text-orange-400', labelBorder: 'border-orange-800' },
     { id: 'carol', type: 'character', name: 'carol', src: '/characters/carol.png', x: 72, y: 75, zIndex: 20, team: 'tech', width: 128, height: 128, label: 'CAROL (PM)', labelColor: 'text-pink-400', labelBorder: 'border-pink-800' },
 
@@ -152,24 +152,24 @@ export default function OfficePage() {
     }, []);
 
     return (
-        <div className="h-full w-full bg-[#1A1A1A] p-0 flex flex-col items-center justify-center font-[family-name:var(--font-press-start)] antialiased">
-            <div className="relative w-full h-full bg-[#3A3C45] border-8 border-[#2B2D31] p-1 shadow-2xl overflow-hidden flex flex-col">
+        <div className="h-full w-full bg-background p-0 flex flex-col items-center justify-center font-[family-name:var(--font-press-start)] antialiased">
+            <div className="relative w-full h-full bg-card border-8 border-border p-1 shadow-2xl overflow-hidden flex flex-col">
                 {/* Top HUD Bar */}
-                <div className="w-full bg-[#3B5B8C] border-4 border-[#25395A] rounded-sm p-2 mb-1 flex justify-between items-center text-white text-[10px] md:text-[10px] z-30">
+                <div className="w-full bg-muted border-4 border-border rounded-sm p-2 mb-1 flex justify-between items-center text-foreground text-[10px] md:text-[10px] z-30">
                     <div className="flex items-center gap-2">
-                        <span className="text-[#FFD700] drop-shadow-[2px_2px_0_rgba(0,0,0,1)] whitespace-nowrap hidden md:inline">GOLEM DEV STORY</span>
+                        <span className="text-amber-600 dark:text-[#FFD700] drop-shadow-[2px_2px_0_rgba(0,0,0,1)] whitespace-nowrap hidden md:inline">GOLEM DEV STORY</span>
 
                         <div className="relative ml-2" ref={dropdownRef}>
                             <button
                                 onClick={() => setIsTeamDropdownOpen(!isTeamDropdownOpen)}
-                                className="px-3 py-1 border-2 border-black bg-[#1D2B44] text-[8px] font-bold text-white hover:bg-[#25395A] transition-all flex items-center gap-2"
+                                className="px-3 py-1 border-2 border-border bg-accent text-[8px] font-bold text-foreground hover:bg-popover transition-all flex items-center gap-2"
                             >
                                 👥 {selectedTeam === 'default' ? 'MAIN OFFICE' : selectedTeam.toUpperCase() + ' SESSION'} <span className="text-[6px]">▼</span>
                             </button>
                             {isTeamDropdownOpen && (
-                                <div className="absolute top-full left-0 mt-1 w-48 bg-[#25395A] border-4 border-black flex flex-col z-[60] shadow-xl">
-                                    <button onClick={() => { setSelectedTeam("default"); setIsTeamDropdownOpen(false); }} className="p-2 text-[8px] text-left hover:bg-white hover:text-black border-b-2 border-black/20">🏠 MAIN OFFICE</button>
-                                    <button onClick={() => { setSelectedTeam("tech"); setIsTeamDropdownOpen(false); }} className="p-2 text-[8px] text-left hover:bg-cyan-500 hover:text-black">💻 TECH TEAM</button>
+                                <div className="absolute top-full left-0 mt-1 w-48 bg-popover border-4 border-border flex flex-col z-[60] shadow-xl">
+                                    <button onClick={() => { setSelectedTeam("default"); setIsTeamDropdownOpen(false); }} className="p-2 text-[8px] text-left hover:bg-card hover:text-foreground border-b-2 border-border/20">🏠 MAIN OFFICE</button>
+                                    <button onClick={() => { setSelectedTeam("tech"); setIsTeamDropdownOpen(false); }} className="p-2 text-[8px] text-left hover:bg-cyan-500 hover:text-foreground">💻 TECH TEAM</button>
                                 </div>
                             )}
                         </div>
@@ -183,7 +183,7 @@ export default function OfficePage() {
                 {/* Inner Room Area */}
                 <div
                     ref={containerRef}
-                    className="flex-1 relative bg-center bg-no-repeat border-4 border-[#25395A] rounded-sm overflow-hidden z-0 shadow-[inset_0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-700"
+                    className="flex-1 relative bg-center bg-no-repeat border-4 border-border rounded-sm overflow-hidden z-0 shadow-[inset_0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-700"
                     style={{
                         backgroundImage: selectedTeam === 'tech' ? "url('/pixel_bg_tech.png')" : "url('/office_bg.png')",
                         backgroundColor: selectedTeam === 'tech' ? '#0a0a2a' : '#3B5B8C',
@@ -212,7 +212,7 @@ export default function OfficePage() {
                             />
 
                             {item.label && (
-                                <span className={`absolute bottom-[-10px] text-[7px] font-bold p-1 bg-black/80 rounded uppercase border whitespace-nowrap ${item.labelColor} ${item.labelBorder}`}>
+                                <span className={`absolute bottom-[-10px] text-[7px] font-bold p-1 bg-card/80 rounded uppercase border whitespace-nowrap ${item.labelColor} ${item.labelBorder}`}>
                                     {item.label}
                                 </span>
                             )}
@@ -235,17 +235,17 @@ export default function OfficePage() {
                 </div>
 
                 {/* Bottom HUD bar */}
-                <div className="w-full bg-[#3B5B8C] border-4 border-[#25395A] border-t-0 p-2 flex justify-between items-center text-[8px] md:text-[10px] text-white z-40">
+                <div className="w-full bg-muted border-4 border-border border-t-0 p-2 flex justify-between items-center text-[8px] md:text-[10px] text-foreground z-40">
                     <div className="flex items-center gap-4">
-                        <span className="text-[#FFD700]">PROJECT: <span className="text-white ml-2">Multi-Agent System v2.0</span></span>
-                        <span className="text-gray-400">|</span>
+                        <span className="text-amber-600 dark:text-[#FFD700]">PROJECT: <span className="text-foreground ml-2">Multi-Agent System v2.0</span></span>
+                        <span className="text-muted-foreground">|</span>
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <span className="text-[#FFD700]">CURRENT SCENE: <span className="text-cyan-400 ml-2 uppercase">{selectedTeam} {selectedTeam !== 'default' ? 'STUDIO' : 'OFFICE'}</span></span>
+                        <span className="text-amber-600 dark:text-[#FFD700]">CURRENT SCENE: <span className="text-cyan-700 dark:text-cyan-400 ml-2 uppercase">{selectedTeam} {selectedTeam !== 'default' ? 'STUDIO' : 'OFFICE'}</span></span>
                         <button
                             onClick={() => setIsLogExpanded(!isLogExpanded)}
-                            className="bg-black/60 border-2 border-[#FFD700] px-2 py-0.5 text-[#FFD700] hover:bg-black transition-colors transform active:scale-95 flex items-center gap-1"
+                            className="bg-card/60 border-2 border-[#FFD700] px-2 py-0.5 text-amber-600 dark:text-[#FFD700] hover:bg-card transition-colors transform active:scale-95 flex items-center gap-1"
                         >
                             {isLogExpanded ? 'CLOSE LOG ▲' : 'OPEN LOG ▼'}
                         </button>
@@ -254,21 +254,21 @@ export default function OfficePage() {
 
                 <div
                     ref={logConsoleRef}
-                    className={`w-full bg-black/80 border-4 border-[#25395A] border-t-0 p-2 overflow-y-auto font-[family-name:Courier_New] text-[10px] text-green-400 custom-scrollbar flex flex-col gap-1 z-40 shrink-0 shadow-[inset_0_2px_10px_rgba(0,0,0,0.8)] transition-all duration-500 origin-bottom ${isLogExpanded ? 'h-32 opacity-100' : 'h-0 opacity-0 py-0 border-b-0'}`}
+                    className={`w-full bg-card/80 border-4 border-border border-t-0 p-2 overflow-y-auto font-[family-name:Courier_New] text-[10px] text-green-700 dark:text-green-400 custom-scrollbar flex flex-col gap-1 z-40 shrink-0 shadow-[inset_0_2px_10px_rgba(0,0,0,0.8)] transition-all duration-500 origin-bottom ${isLogExpanded ? 'h-32 opacity-100' : 'h-0 opacity-0 py-0 border-b-0'}`}
                 >
                     {messageHistory.length === 0 ? (
-                        <div className="text-gray-500 italic">Waiting for system logs...</div>
+                        <div className="text-muted-foreground italic">Waiting for system logs...</div>
                     ) : (
                         messageHistory.map((msg) => (
                             <div key={msg.id} className="border-b border-green-900/40 pb-1 mb-1">
                                 <span className={
-                                    msg.role === 'user' ? 'text-cyan-400 font-bold' :
+                                    msg.role === 'user' ? 'text-cyan-700 dark:text-cyan-400 font-bold' :
                                         msg.role === 'brain' ? 'text-yellow-400 font-bold' :
-                                            msg.role === 'memory' ? 'text-purple-400 font-bold' :
+                                            msg.role === 'memory' ? 'text-purple-600 dark:text-purple-400 font-bold' :
                                                 'text-red-400 font-bold'
                                 }>[{msg.role.toUpperCase()}]</span>
-                                <span className="text-gray-500 ml-1">{(new Date(msg.timestamp)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
-                                <div className="mt-1 text-white/90 whitespace-pre-wrap pl-2 border-l-2 border-gray-700 ml-1">{msg.text}</div>
+                                <span className="text-muted-foreground ml-1">{(new Date(msg.timestamp)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                                <div className="mt-1 text-foreground/90 whitespace-pre-wrap pl-2 border-l-2 border-border ml-1">{msg.text}</div>
                             </div>
                         ))
                     )}

@@ -15,8 +15,8 @@ interface MetricCardProps {
 
 export function MetricCard({ title, value, icon: Icon, data, dataKey, color = "#8884d8" }: MetricCardProps) {
     return (
-        <Card className="bg-gray-900 border-gray-800 text-white shadow-md">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 text-gray-300">
+        <Card className="bg-card border-border text-foreground shadow-md">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 text-muted-foreground">
                 <CardTitle className="text-sm font-medium">{title}</CardTitle>
                 <Icon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>

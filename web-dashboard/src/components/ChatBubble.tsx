@@ -76,7 +76,7 @@ export function ChatBubble({ text, role, className }: ChatBubbleProps) {
 
     return (
         <div className={cn(
-            "absolute z-10 min-w-[200px] max-w-[280px] h-[100px] p-2.5 bg-white text-black border-4 border-black font-mono text-[10px] md:text-[11px] leading-snug tracking-tight shadow-[4px_4px_0_0_rgba(0,0,0,1)] rounded-none flex flex-col",
+            "absolute z-10 min-w-[200px] max-w-[280px] h-[100px] p-2.5 bg-card text-foreground border-4 border-border font-mono text-[10px] md:text-[11px] leading-snug tracking-tight shadow-[4px_4px_0_0_rgba(0,0,0,1)] rounded-none flex flex-col",
             "before:content-[''] before:absolute before:border-solid before:border-t-black",
             isLeftAligned
                 ? "before:-bottom-[12px] before:left-4 before:border-t-[8px] before:border-x-[8px] before:border-x-transparent"

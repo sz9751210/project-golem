@@ -34,13 +34,13 @@ const SystemHealthDashboard = ({ systemStatus }: { systemStatus: SystemStatus | 
     const { runtime, health, system } = systemStatus;
 
     const StatusItem = ({ label, status, icon: Icon }: { label: string, status: boolean, icon: any }) => (
-        <div className="flex items-center justify-between p-2 rounded-lg bg-gray-900/40 border border-gray-800/40">
+        <div className="flex items-center justify-between p-2 rounded-lg bg-card/40 border border-border/40">
             <div className="flex items-center gap-2">
-                <Icon className="w-4 h-4 text-gray-400" />
-                <span className="text-xs text-gray-300">{label}</span>
+                <Icon className="w-4 h-4 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">{label}</span>
             </div>
             {status ? (
-                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-500" />
             ) : (
                 <AlertTriangle className="w-4 h-4 text-amber-500" />
             )}
@@ -50,40 +50,40 @@ const SystemHealthDashboard = ({ systemStatus }: { systemStatus: SystemStatus | 
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-top-4 duration-500 mb-8">
             {/* 1. Runtime Info */}
-            <div className="bg-gray-900/30 border border-gray-800 hover:border-gray-700/50 transition-colors rounded-xl p-5 shadow-sm">
+            <div className="bg-card/30 border border-border hover:border-border/50 transition-colors rounded-xl p-5 shadow-sm">
                 <div className="flex items-center gap-2 mb-4">
-                    <Cpu className="w-5 h-5 text-cyan-400" />
-                    <h3 className="text-sm font-semibold text-white">運作環境 (Runtime)</h3>
+                    <Cpu className="w-5 h-5 text-cyan-700 dark:text-cyan-400" />
+                    <h3 className="text-sm font-semibold text-foreground">運作環境 (Runtime)</h3>
                 </div>
                 <div className="space-y-3">
                     <div className="flex justify-between text-xs">
-                        <span className="text-gray-500">OS</span>
-                        <span className="text-indigo-400 font-medium">{(systemStatus as any)?.runtime?.osName || 'Unknown'}</span>
+                        <span className="text-muted-foreground">OS</span>
+                        <span className="text-indigo-700 dark:text-indigo-400 font-medium">{(systemStatus as any)?.runtime?.osName || 'Unknown'}</span>
                     </div>
                     <div className="flex justify-between text-xs">
-                        <span className="text-gray-500">Node.js</span>
-                        <span className="text-gray-300 font-mono">{runtime?.node || 'Unknown'}</span>
+                        <span className="text-muted-foreground">Node.js</span>
+                        <span className="text-muted-foreground font-mono">{runtime?.node || 'Unknown'}</span>
                     </div>
                     <div className="flex justify-between text-xs">
-                        <span className="text-gray-500">npm</span>
-                        <span className="text-gray-300 font-mono">{runtime?.npm || 'Unknown'}</span>
+                        <span className="text-muted-foreground">npm</span>
+                        <span className="text-muted-foreground font-mono">{runtime?.npm || 'Unknown'}</span>
                     </div>
                     <div className="flex justify-between text-xs">
-                        <span className="text-gray-500">Platform</span>
-                        <span className="text-gray-300 capitalize">{runtime?.platform} ({runtime?.arch})</span>
+                        <span className="text-muted-foreground">Platform</span>
+                        <span className="text-muted-foreground capitalize">{runtime?.platform} ({runtime?.arch})</span>
                     </div>
                     <div className="flex justify-between text-xs">
-                        <span className="text-gray-500">Uptime</span>
-                        <span className="text-gray-300">{Math.floor((runtime?.uptime || 0) / 3600)}h {Math.floor(((runtime?.uptime || 0) % 3600) / 60)}m</span>
+                        <span className="text-muted-foreground">Uptime</span>
+                        <span className="text-muted-foreground">{Math.floor((runtime?.uptime || 0) / 3600)}h {Math.floor(((runtime?.uptime || 0) % 3600) / 60)}m</span>
                     </div>
                 </div>
             </div>
 
             {/* 2. System Health */}
-            <div className="bg-gray-900/30 border border-gray-800 hover:border-gray-700/50 transition-colors rounded-xl p-5 shadow-sm">
+            <div className="bg-card/30 border border-border hover:border-border/50 transition-colors rounded-xl p-5 shadow-sm">
                 <div className="flex items-center gap-2 mb-4">
-                    <Activity className="w-5 h-5 text-emerald-400" />
-                    <h3 className="text-sm font-semibold text-white">健康檢查 (Health)</h3>
+                    <Activity className="w-5 h-5 text-emerald-700 dark:text-emerald-400" />
+                    <h3 className="text-sm font-semibold text-foreground">健康檢查 (Health)</h3>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                     <StatusItem label="API Keys" status={!!health?.keys} icon={Activity} />
@@ -94,18 +94,18 @@ const SystemHealthDashboard = ({ systemStatus }: { systemStatus: SystemStatus | 
             </div>
 
             {/* 3. System Resources */}
-            <div className="bg-gray-900/30 border border-gray-800 hover:border-gray-700/50 transition-colors rounded-xl p-5 shadow-sm">
+            <div className="bg-card/30 border border-border hover:border-border/50 transition-colors rounded-xl p-5 shadow-sm">
                 <div className="flex items-center gap-2 mb-4">
-                    <Server className="w-5 h-5 text-indigo-400" />
-                    <h3 className="text-sm font-semibold text-white">系統資源 (Resources)</h3>
+                    <Server className="w-5 h-5 text-indigo-700 dark:text-indigo-400" />
+                    <h3 className="text-sm font-semibold text-foreground">系統資源 (Resources)</h3>
                 </div>
                 <div className="space-y-4">
                     <div>
-                        <div className="flex justify-between text-[10px] text-gray-500 mb-1">
+                        <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
                             <span>記憶體 (Memory)</span>
                             <span>{system?.freeMem} / {system?.totalMem}</span>
                         </div>
-                        <div className="h-1.5 w-full bg-gray-800 rounded-full overflow-hidden">
+                        <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
                             <div
                                 className="h-full bg-indigo-500 transition-all duration-1000"
                                 style={{ width: `${100 - (parseInt(system?.freeMem || "0") / parseInt(system?.totalMem || "1")) * 100}%` }}
@@ -113,11 +113,11 @@ const SystemHealthDashboard = ({ systemStatus }: { systemStatus: SystemStatus | 
                         </div>
                     </div>
                     <div className="flex justify-between text-xs pt-1">
-                        <div className="flex items-center gap-2 text-gray-500">
+                        <div className="flex items-center gap-2 text-muted-foreground">
                             <HardDrive className="w-4 h-4" />
                             磁碟可用空間
                         </div>
-                        <span className="text-emerald-400 font-bold">{system?.diskAvail || 'N/A'}</span>
+                        <span className="text-emerald-700 dark:text-emerald-400 font-bold">{system?.diskAvail || 'N/A'}</span>
                     </div>
                 </div>
             </div>
@@ -140,11 +140,11 @@ const SettingField = ({
 
     return (
         <div className="flex flex-col mb-4">
-            <label className="text-sm font-medium text-gray-300 mb-1 flex items-center justify-between gap-1 overflow-hidden">
+            <label className="text-sm font-medium text-muted-foreground mb-1 flex items-center justify-between gap-1 overflow-hidden">
                 <span className="truncate mr-1" title={label}>{label}</span>
                 <div className="flex items-center gap-1.5 shrink-0">
                     {isReadOnly && (
-                        <span className="text-[10px] bg-gray-800 text-gray-400 px-1.5 py-0.5 rounded border border-gray-700 flex items-center gap-1 whitespace-nowrap">
+                        <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded border border-border flex items-center gap-1 whitespace-nowrap">
                             <Lock className="w-3 h-3" /> 唯讀
                         </span>
                     )}
@@ -164,21 +164,21 @@ const SettingField = ({
                     }}
                     placeholder={placeholder}
                     disabled={isReadOnly}
-                    className={`w-full bg-gray-900/50 border border-gray-700/50 focus:border-cyan-500 rounded-lg px-3 py-2 text-sm text-gray-100 font-mono transition-colors ${isReadOnly ? "opacity-70 cursor-not-allowed bg-gray-900/80" : ""} ${isSecret ? "pr-10" : ""}`}
+                    className={`w-full bg-card/50 border border-border/50 focus:border-cyan-500 rounded-lg px-3 py-2 text-sm text-foreground font-mono transition-colors ${isReadOnly ? "opacity-70 cursor-not-allowed bg-card/80" : ""} ${isSecret ? "pr-10" : ""}`}
                     spellCheck={false}
                 />
                 {isSecret && (
                     <button
                         type="button"
                         onClick={() => setIsVisible(!isVisible)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors p-1"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground transition-colors p-1"
                         title={isVisible ? "隱藏內容" : "顯示內容"}
                     >
                         {isVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                 )}
             </div>
-            {desc && <p className="text-xs text-gray-500 mt-1">{desc}</p>}
+            {desc && <p className="text-xs text-muted-foreground mt-1">{desc}</p>}
         </div>
     );
 };
@@ -298,16 +298,16 @@ const SystemUpdateSection = () => {
     if (!updateInfo) return null;
 
     return (
-        <div className="bg-gray-900/30 border border-indigo-900/50 hover:border-indigo-700/50 transition-colors rounded-xl p-5 shadow-sm mb-6 animate-in fade-in">
+        <div className="bg-card/30 border border-indigo-900/50 hover:border-indigo-700/50 transition-colors rounded-xl p-5 shadow-sm mb-6 animate-in fade-in">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                        <DownloadCloud className="w-5 h-5 text-indigo-400" />
+                    <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+                        <DownloadCloud className="w-5 h-5 text-indigo-700 dark:text-indigo-400" />
                         系統升級與版本控制 (System Update)
                     </h2>
-                    <p className="text-sm text-gray-400 mt-1">
-                        當前版本: <span className="font-mono text-cyan-400 px-1">{updateInfo.currentVersion}</span>
-                        | 安裝模式: <span className="uppercase text-xs bg-gray-800 px-1.5 py-0.5 rounded ml-1 tracking-wider">{updateInfo.installMode}</span>
+                    <p className="text-sm text-muted-foreground mt-1">
+                        當前版本: <span className="font-mono text-cyan-700 dark:text-cyan-400 px-1">{updateInfo.currentVersion}</span>
+                        | 安裝模式: <span className="uppercase text-xs bg-muted px-1.5 py-0.5 rounded ml-1 tracking-wider">{updateInfo.installMode}</span>
                     </p>
                 </div>
                 <button
@@ -319,99 +319,99 @@ const SystemUpdateSection = () => {
             </div>
 
             {showModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
-                    <div className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl max-w-md w-full p-6 space-y-6">
-                        <h3 className="text-xl font-bold flex items-center gap-2 text-white">
-                            <DownloadCloud className="w-6 h-6 text-indigo-400" />
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-card/60 backdrop-blur-sm p-4 animate-in fade-in">
+                    <div className="bg-card border border-border rounded-xl shadow-2xl max-w-md w-full p-6 space-y-6">
+                        <h3 className="text-xl font-bold flex items-center gap-2 text-foreground">
+                            <DownloadCloud className="w-6 h-6 text-indigo-700 dark:text-indigo-400" />
                             系統一鍵更新
                         </h3>
 
                         {!isUpdating && !updateDone ? (
                             <div className="space-y-4">
                                 <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto" />
-                                <p className="text-sm text-gray-300 text-center">
+                                <p className="text-sm text-muted-foreground text-center">
                                     此動作將會從 GitHub 下載最新程式碼並進行覆寫。過程可能需要幾分鐘。
                                 </p>
 
                                 {updateInfo.installMode === 'git' && updateInfo.gitInfo && (
-                                    <div className="bg-gray-950 p-4 rounded-lg border border-gray-800 text-sm space-y-2">
-                                        <div className="flex items-center gap-2 text-indigo-400 font-semibold mb-2">
+                                    <div className="bg-background p-4 rounded-lg border border-border text-sm space-y-2">
+                                        <div className="flex items-center gap-2 text-indigo-700 dark:text-indigo-400 font-semibold mb-2">
                                             <Activity className="w-4 h-4" /> Git 版本差異分析
                                         </div>
                                         <div className="flex justify-between">
-                                            <span className="text-gray-500">當前分支:</span>
-                                            <span className="text-gray-300 bg-gray-800 px-1.5 rounded">{updateInfo.gitInfo.currentBranch}</span>
+                                            <span className="text-muted-foreground">當前分支:</span>
+                                            <span className="text-muted-foreground bg-muted px-1.5 rounded">{updateInfo.gitInfo.currentBranch}</span>
                                         </div>
                                         <div className="flex flex-col gap-1">
-                                            <span className="text-gray-500">當前版本 (Current):</span>
-                                            <span className="text-gray-400 font-mono text-xs">{updateInfo.gitInfo.currentCommit}</span>
+                                            <span className="text-muted-foreground">當前版本 (Current):</span>
+                                            <span className="text-muted-foreground font-mono text-xs">{updateInfo.gitInfo.currentCommit}</span>
                                         </div>
                                         <div className="flex flex-col gap-1">
-                                            <span className="text-gray-500">遠端最新 (Latest):</span>
-                                            <span className="text-emerald-400/90 font-mono text-xs">{updateInfo.gitInfo.latestCommit}</span>
+                                            <span className="text-muted-foreground">遠端最新 (Latest):</span>
+                                            <span className="text-emerald-700 dark:text-emerald-400/90 font-mono text-xs">{updateInfo.gitInfo.latestCommit}</span>
                                         </div>
-                                        <div className="pt-2 border-t border-gray-800 mt-2">
+                                        <div className="pt-2 border-t border-border mt-2">
                                             {updateInfo.gitInfo.behindCount > 0 ? (
-                                                <span className="text-amber-400 font-medium">⚠️ 您的系統落後遠端 {updateInfo.gitInfo.behindCount} 個更新 (Commits)。建議進行更新。</span>
+                                                <span className="text-amber-700 dark:text-amber-400 font-medium">⚠️ 您的系統落後遠端 {updateInfo.gitInfo.behindCount} 個更新 (Commits)。建議進行更新。</span>
                                             ) : (
-                                                <span className="text-emerald-400 font-medium">✅ 您目前已經是最新版本，無需更新。</span>
+                                                <span className="text-emerald-700 dark:text-emerald-400 font-medium">✅ 您目前已經是最新版本，無需更新。</span>
                                             )}
                                         </div>
                                     </div>
                                 )}
 
                                 {updateInfo.installMode === 'zip' && updateInfo.remoteVersion && updateInfo.remoteVersion !== 'Unknown' && (
-                                    <div className="bg-gray-950 p-4 rounded-lg border border-gray-800 text-sm space-y-2">
-                                        <div className="flex items-center gap-2 text-indigo-400 font-semibold mb-2">
+                                    <div className="bg-background p-4 rounded-lg border border-border text-sm space-y-2">
+                                        <div className="flex items-center gap-2 text-indigo-700 dark:text-indigo-400 font-semibold mb-2">
                                             <Activity className="w-4 h-4" /> 主機板號差異分析
                                         </div>
                                         <div className="flex justify-between">
-                                            <span className="text-gray-500">當前版本 (Current):</span>
-                                            <span className="text-gray-400 font-mono text-xs text-right">{updateInfo.currentVersion}</span>
+                                            <span className="text-muted-foreground">當前版本 (Current):</span>
+                                            <span className="text-muted-foreground font-mono text-xs text-right">{updateInfo.currentVersion}</span>
                                         </div>
                                         <div className="flex justify-between">
-                                            <span className="text-gray-500">遠端最新 (Latest):</span>
-                                            <span className="text-emerald-400/90 font-mono text-xs text-right">{updateInfo.remoteVersion}</span>
+                                            <span className="text-muted-foreground">遠端最新 (Latest):</span>
+                                            <span className="text-emerald-700 dark:text-emerald-400/90 font-mono text-xs text-right">{updateInfo.remoteVersion}</span>
                                         </div>
-                                        <div className="pt-2 border-t border-gray-800 mt-2">
+                                        <div className="pt-2 border-t border-border mt-2">
                                             {updateInfo.isOutdated ? (
-                                                <span className="text-amber-400 font-medium">⚠️ 發現新版本 (v{updateInfo.remoteVersion}) 可供更新。建議進行更新。</span>
+                                                <span className="text-amber-700 dark:text-amber-400 font-medium">⚠️ 發現新版本 (v{updateInfo.remoteVersion}) 可供更新。建議進行更新。</span>
                                             ) : (
-                                                <span className="text-emerald-400 font-medium">✅ 您目前已經是最新版本 (v{updateInfo.currentVersion})。</span>
+                                                <span className="text-emerald-700 dark:text-emerald-400 font-medium">✅ 您目前已經是最新版本 (v{updateInfo.currentVersion})。</span>
                                             )}
                                         </div>
                                     </div>
                                 )}
 
-                                <div className="space-y-3 bg-black/30 p-4 rounded-lg border border-gray-800">
+                                <div className="space-y-3 bg-card/30 p-4 rounded-lg border border-border">
                                     <label className="flex items-start gap-3 cursor-pointer group">
                                         <input type="checkbox" checked={keepMemory} onChange={(e) => setKeepMemory(e.target.checked)} className="mt-1" />
                                         <div className="text-sm">
-                                            <span className="text-gray-200 block group-hover:text-white transition-colors">保留 Golem 記憶與設定檔</span>
-                                            <span className="text-gray-500 text-xs mt-1 block">強制保留 `golem_memory` 與 `.env`，避免心血流失。（強烈建議勾選）</span>
+                                            <span className="text-foreground block group-hover:text-foreground transition-colors">保留 Golem 記憶與設定檔</span>
+                                            <span className="text-muted-foreground text-xs mt-1 block">強制保留 `golem_memory` 與 `.env`，避免心血流失。（強烈建議勾選）</span>
                                         </div>
                                     </label>
 
                                     {updateInfo.installMode === 'zip' && (
-                                        <label className="flex items-start gap-3 cursor-pointer group pt-3 border-t border-gray-800">
+                                        <label className="flex items-start gap-3 cursor-pointer group pt-3 border-t border-border">
                                             <input type="checkbox" checked={keepOldData} onChange={(e) => setKeepOldData(e.target.checked)} className="mt-1" />
                                             <div className="text-sm">
-                                                <span className="text-gray-200 block group-hover:text-white transition-colors">建立完整系統備份</span>
-                                                <span className="text-gray-500 text-xs mt-1 block">更新前將現有檔案移至 `backup_` 資料夾以防萬一。若取消勾選則會直接覆蓋刪除。</span>
+                                                <span className="text-foreground block group-hover:text-foreground transition-colors">建立完整系統備份</span>
+                                                <span className="text-muted-foreground text-xs mt-1 block">更新前將現有檔案移至 `backup_` 資料夾以防萬一。若取消勾選則會直接覆蓋刪除。</span>
                                             </div>
                                         </label>
                                     )}
                                 </div>
 
                                 <div className="flex gap-3 justify-end pt-2">
-                                    <button onClick={() => setShowModal(false)} className="px-4 py-2 hover:bg-gray-800 text-gray-400 rounded-lg text-sm transition-colors">取消</button>
+                                    <button onClick={() => setShowModal(false)} className="px-4 py-2 hover:bg-muted text-muted-foreground rounded-lg text-sm transition-colors">取消</button>
                                     <button
                                         onClick={handleStartUpdate}
                                         disabled={
                                             (updateInfo.installMode === 'git' && updateInfo.gitInfo && updateInfo.gitInfo.behindCount === 0) ||
                                             (updateInfo.installMode === 'zip' && !updateInfo.isOutdated)
                                         }
-                                        className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-900/50 disabled:text-gray-500 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors"
+                                        className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-900/50 disabled:text-muted-foreground disabled:cursor-not-allowed text-foreground rounded-lg text-sm font-medium transition-colors"
                                     >開始更新</button>
                                 </div>
                             </div>
@@ -419,23 +419,23 @@ const SystemUpdateSection = () => {
                             <div className="space-y-6 py-4">
                                 <div className="text-center space-y-2">
                                     {updateDone ? (
-                                        <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto animate-bounce" />
+                                        <CheckCircle2 className="w-12 h-12 text-emerald-600 dark:text-emerald-500 mx-auto animate-bounce" />
                                     ) : (
                                         <Loader2 className="w-12 h-12 text-indigo-500 mx-auto animate-spin" />
                                     )}
-                                    <p className="text-white font-medium">{statusText || "請稍候..."}</p>
+                                    <p className="text-foreground font-medium">{statusText || "請稍候..."}</p>
                                 </div>
 
                                 {!updateDone && (
-                                    <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                                    <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
                                         <div className="h-full bg-indigo-500 transition-all duration-500" style={{ width: `${progress}%` }} />
                                     </div>
                                 )}
 
                                 {updateDone && (
                                     <div className="flex gap-3 justify-center pt-4">
-                                        <button onClick={() => setShowModal(false)} className="px-4 py-2 hover:bg-gray-800 text-gray-400 border border-gray-700 rounded-lg text-sm">稍後重啟</button>
-                                        <button onClick={handleRestart} className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-emerald-900/50">立即重啟系統</button>
+                                        <button onClick={() => setShowModal(false)} className="px-4 py-2 hover:bg-muted text-muted-foreground border border-border rounded-lg text-sm">稍後重啟</button>
+                                        <button onClick={handleRestart} className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-foreground rounded-lg text-sm font-bold shadow-lg shadow-emerald-900/50">立即重啟系統</button>
                                     </div>
                                 )}
                             </div>
@@ -624,8 +624,8 @@ export default function SettingsPage() {
         return (
             <div className="flex-1 p-6 flex items-center justify-center">
                 <div className="flex flex-col items-center space-y-4">
-                    <RefreshCw className="w-8 h-8 text-cyan-500 animate-spin" />
-                    <p className="text-gray-400 font-mono text-sm">讀取總開關系統中...</p>
+                    <RefreshCw className="w-8 h-8 text-cyan-600 dark:text-cyan-500 animate-spin" />
+                    <p className="text-muted-foreground font-mono text-sm">讀取總開關系統中...</p>
                 </div>
             </div>
         );
@@ -636,20 +636,20 @@ export default function SettingsPage() {
             <div className="max-w-6xl mx-auto space-y-6">
 
                 {/* Header */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-800 pb-4">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-4">
                     <div>
                         <h1 className="text-2xl font-bold flex items-center gap-2">
-                            <Settings className="w-6 h-6 text-cyan-400" />
+                            <Settings className="w-6 h-6 text-cyan-700 dark:text-cyan-400" />
                             系統配置總表 (System Settings)
                         </h1>
-                        <p className="text-sm text-gray-400 mt-1">
+                        <p className="text-sm text-muted-foreground mt-1">
                             管理 Golem 的全域配置與 API 金鑰。部分變數支援熱抽換，不需斷電即可生效。
                         </p>
                     </div>
                     <div className="flex items-center gap-3">
                         <button
                             onClick={handleRestartSystem}
-                            className="px-4 py-2 bg-gray-800 hover:bg-red-900/40 text-gray-300 hover:text-red-400 border border-gray-700 hover:border-red-800 rounded-lg text-sm transition-all flex items-center gap-2"
+                            className="px-4 py-2 bg-muted hover:bg-red-900/40 text-muted-foreground hover:text-red-400 border border-border hover:border-red-800 rounded-lg text-sm transition-all flex items-center gap-2"
                         >
                             <RefreshCw className="w-4 h-4" />
                             Restart System
@@ -658,8 +658,8 @@ export default function SettingsPage() {
                             onClick={handleSave}
                             disabled={isSaving}
                             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${isSaving
-                                ? "bg-cyan-900/50 text-cyan-500 cursor-not-allowed border border-cyan-800/50"
-                                : "bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 border border-cyan-500/30 hover:border-cyan-500"
+                                ? "bg-cyan-900/50 text-cyan-600 dark:text-cyan-500 cursor-not-allowed border border-cyan-800/50"
+                                : "bg-cyan-100 dark:bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 hover:bg-cyan-500/20 border border-cyan-500/30 hover:border-cyan-500"
                                 }`}
                         >
                             {isSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
@@ -670,7 +670,7 @@ export default function SettingsPage() {
 
                 {/* Status Message */}
                 {statusMessage && (
-                    <div className={`p-4 rounded-lg flex items-start gap-3 border ${statusMessage.type === 'success' ? 'bg-green-950/30 border-green-900/50 text-green-400' :
+                    <div className={`p-4 rounded-lg flex items-start gap-3 border ${statusMessage.type === 'success' ? 'bg-green-950/30 border-green-900/50 text-green-700 dark:text-green-400' :
                         statusMessage.type === 'warning' ? 'bg-orange-950/30 border-orange-900/50 text-orange-400' :
                             'bg-red-950/30 border-red-900/50 text-red-400'
                         }`}>
@@ -690,8 +690,8 @@ export default function SettingsPage() {
                     {/* 左側：AI 大腦與控制權限 */}
                     <div className="space-y-6">
                         {/* Section: Gemini Brain */}
-                        <div className="bg-gray-900/30 border border-gray-800 rounded-xl p-5 shadow-sm">
-                            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                        <div className="bg-card/30 border border-border rounded-xl p-5 shadow-sm">
+                            <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
                                 🧠 Golem Brain (大腦設定)
                             </h2>
                             <SettingField
@@ -706,8 +706,8 @@ export default function SettingsPage() {
                         </div>
 
                         {/* Section: Telegram Config */}
-                        <div className="bg-gray-900/30 border border-gray-800 hover:border-indigo-900/50 transition-colors rounded-xl p-5 shadow-sm">
-                            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                        <div className="bg-card/30 border border-border hover:border-indigo-900/50 transition-colors rounded-xl p-5 shadow-sm">
+                            <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
                                 ✈️ Telegram 設定 (單機全域)
                             </h2>
                             <SettingField
@@ -748,8 +748,8 @@ export default function SettingsPage() {
                         </div>
 
                         {/* Section: Discord Config */}
-                        <div className="bg-gray-900/30 border border-gray-800 hover:border-purple-900/50 transition-colors rounded-xl p-5 shadow-sm">
-                            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                        <div className="bg-card/30 border border-border hover:border-purple-900/50 transition-colors rounded-xl p-5 shadow-sm">
+                            <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
                                 👾 Discord 設定
                             </h2>
                             <SettingField
@@ -775,8 +775,8 @@ export default function SettingsPage() {
                     {/* 右側：系統進階與社交 */}
                     <div className="space-y-6">
                         {/* Section: Moltbook / Social */}
-                        <div className="bg-gray-900/30 border border-gray-800 hover:border-rose-900/30 transition-colors rounded-xl p-5 shadow-sm">
-                            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                        <div className="bg-card/30 border border-border hover:border-rose-900/30 transition-colors rounded-xl p-5 shadow-sm">
+                            <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
                                 🦞 Moltbook 社交網絡
                             </h2>
                             <SettingField
@@ -799,8 +799,8 @@ export default function SettingsPage() {
                         </div>
 
                         {/* Section: System Advanced */}
-                        <div className="bg-gray-900/30 border border-gray-800 rounded-xl p-5 shadow-sm">
-                            <h2 className="text-lg font-semibold text-gray-300 mb-4 flex items-center gap-2">
+                        <div className="bg-card/30 border border-border rounded-xl p-5 shadow-sm">
+                            <h2 className="text-lg font-semibold text-muted-foreground mb-4 flex items-center gap-2">
                                 ⚙️ 系統進階設定
                             </h2>
                             <div className="grid grid-cols-2 gap-4">
@@ -846,12 +846,12 @@ export default function SettingsPage() {
                                     onChange={(val) => handleChangeEnv("GITHUB_REPO", val)}
                                 />
                                 <div className="space-y-4 col-span-2">
-                                    <div className="bg-gray-800/30 p-4 rounded-lg border border-gray-700/50">
-                                        <h4 className="text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
+                                    <div className="bg-muted/30 p-4 rounded-lg border border-border/50">
+                                        <h4 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
                                             <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
                                             日誌輪替策略 (Log Rotation Strategy)
                                         </h4>
-                                        <p className="text-xs text-gray-500 mb-4">
+                                        <p className="text-xs text-muted-foreground mb-4">
                                             系統將自動在「跨日」或「檔案大小達標」時建立新的日誌壓縮檔，這兩個條件只要達成其一即會觸發輪替。
                                         </p>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -875,12 +875,12 @@ export default function SettingsPage() {
                                     </div>
                                 </div>
                             </div>
-                            <div className="mt-4 pt-4 border-t border-gray-800/80">
+                            <div className="mt-4 pt-4 border-t border-border/80">
                                 <div className="flex items-center justify-between mb-4">
-                                    <span className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                                    <span className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                                         啟用系統日誌 (System Log)
                                         {logInfo && (
-                                            <span className={`px-2 py-0.5 rounded text-xs font-mono ml-2 ${logInfo.bytes > 10 * 1024 * 1024 ? 'bg-red-900/50 text-red-400' : 'bg-green-900/30 text-green-400'}`}>
+                                            <span className={`px-2 py-0.5 rounded text-xs font-mono ml-2 ${logInfo.bytes > 10 * 1024 * 1024 ? 'bg-red-900/50 text-red-400' : 'bg-green-900/30 text-green-700 dark:text-green-400'}`}>
                                                 system.log 大小: {logInfo.size}
                                             </span>
                                         )}
@@ -898,8 +898,8 @@ export default function SettingsPage() {
                         </div>
 
                         {/* Section: Autonomy Schedule */}
-                        <div className="bg-gray-900/30 border border-gray-800 hover:border-blue-900/30 transition-colors rounded-xl p-5 shadow-sm">
-                            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                        <div className="bg-card/30 border border-border hover:border-blue-900/30 transition-colors rounded-xl p-5 shadow-sm">
+                            <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
                                 ⏳ 自動化與作息設定
                             </h2>
                             <div className="grid grid-cols-2 gap-4">
@@ -942,11 +942,11 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Section: Other Variables (Read Only) */}
-                <div className="mt-8 border-t border-gray-800/60 pt-8">
-                    <h2 className="text-xl font-bold tracking-tight text-gray-400 mb-6 flex items-center gap-2">
+                <div className="mt-8 border-t border-border/60 pt-8">
+                    <h2 className="text-xl font-bold tracking-tight text-muted-foreground mb-6 flex items-center gap-2">
                         🔧 其他唯讀參數 (Other Configs)
                     </h2>
-                    <div className="bg-gray-950/50 border border-gray-800/80 rounded-xl p-5 shadow-sm">
+                    <div className="bg-background/50 border border-border/80 rounded-xl p-5 shadow-sm">
                         {/* Section: Other Variables (Read Only) */}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2 mb-6">
                             {Object.keys(config.env)
@@ -972,15 +972,15 @@ export default function SettingsPage() {
                             }
                         </div>
                         {Object.keys(config.env).length === 0 && (
-                            <p className="text-sm text-gray-500 italic text-center py-4">無其他參數</p>
+                            <p className="text-sm text-muted-foreground italic text-center py-4">無其他參數</p>
                         )}
 
                         {/* Drag and Drop Command Configuration */}
-                        <div className="mt-8 border-t border-gray-800/80 pt-6">
-                            <h3 className="text-lg font-bold text-gray-200 mb-4 flex items-center gap-2">
+                        <div className="mt-8 border-t border-border/80 pt-6">
+                            <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
                                 🛡️ 指令安全與白名單設定 (Drag & Drop)
                             </h3>
-                            <p className="text-sm text-gray-400 mb-6">
+                            <p className="text-sm text-muted-foreground mb-6">
                                 預設的安全指令不可移除。您可以新增自訂指令，並在「備選池」與「允許清單」之間拖曳以啟用/停用免審批功能。
                             </p>
 
@@ -1001,12 +1001,12 @@ export default function SettingsPage() {
 
                                 {/* 🛡️ 系統安全庫 (預設) */}
                                 <div
-                                    className="bg-gray-950/20 border border-gray-800/80 rounded-xl p-4 flex flex-col h-full transition-colors relative"
+                                    className="bg-background/20 border border-border/80 rounded-xl p-4 flex flex-col h-full transition-colors relative"
                                 >
-                                    <h4 className="text-sm font-semibold text-gray-400 flex items-center gap-2 mb-3">
+                                    <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-2 mb-3">
                                         🛡️ 系統安全庫 (預設)
                                     </h4>
-                                    <p className="text-[10px] text-gray-500 mb-3">系統內建的安全指令，必須拖出至允許清單才會免審批。</p>
+                                    <p className="text-[10px] text-muted-foreground mb-3">系統內建的安全指令，必須拖出至允許清單才會免審批。</p>
                                     <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar h-[22rem]">
                                         {['dir', 'pwd', 'date', 'echo', 'cat', 'grep', 'find', 'whoami', 'tail', 'head', 'df', 'free', 'Get-ChildItem', 'Select-String', 'golem-check']
                                             .filter(cmd => !(config.env.COMMAND_WHITELIST || "").split(',').map(s => s.trim()).includes(cmd))
@@ -1018,10 +1018,10 @@ export default function SettingsPage() {
                                                         e.dataTransfer.setData("text/plain", cmd);
                                                         e.dataTransfer.effectAllowed = "move";
                                                     }}
-                                                    className="px-3 py-2 bg-gray-800 border border-gray-700 text-gray-400 text-xs font-mono rounded cursor-grab active:cursor-grabbing hover:border-emerald-500 shadow-sm relative group flex items-center justify-between"
+                                                    className="px-3 py-2 bg-muted border border-border text-muted-foreground text-xs font-mono rounded cursor-grab active:cursor-grabbing hover:border-emerald-500 shadow-sm relative group flex items-center justify-between"
                                                 >
                                                     <span>{cmd}</span>
-                                                    <span className="text-[10px] text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">拖曳啟用</span>
+                                                    <span className="text-[10px] text-emerald-700 dark:text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">拖曳啟用</span>
                                                 </div>
                                             ))}
                                     </div>
@@ -1057,7 +1057,7 @@ export default function SettingsPage() {
                                         }
                                     }}
                                 >
-                                    <h4 className="text-sm font-semibold text-emerald-400 flex items-center gap-2 mb-3">
+                                    <h4 className="text-sm font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-2 mb-3">
                                         <CheckCircle2 className="w-4 h-4" /> 允許清單 (免審批)
                                     </h4>
                                     <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar h-[22rem]">
@@ -1079,7 +1079,7 @@ export default function SettingsPage() {
                                                 >
                                                     <span>{cmd}</span>
                                                     <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <span className="text-[10px] text-gray-500 mr-1">拖出停用</span>
+                                                        <span className="text-[10px] text-muted-foreground mr-1">拖出停用</span>
                                                         <button
                                                             onClick={() => {
                                                                 const poolStr = config.env.COMMAND_WHITELIST || "";
@@ -1097,7 +1097,7 @@ export default function SettingsPage() {
                                                                     }
                                                                 }
                                                             }}
-                                                            className="text-gray-500 hover:text-red-400 p-0.5"
+                                                            className="text-muted-foreground hover:text-red-400 p-0.5"
                                                             title="移除"
                                                         >
                                                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
@@ -1144,7 +1144,7 @@ export default function SettingsPage() {
                                         }
                                     }}
                                 >
-                                    <h4 className="text-sm font-semibold text-blue-400 flex items-center justify-between gap-2 mb-3">
+                                    <h4 className="text-sm font-semibold text-blue-700 dark:text-blue-400 flex items-center justify-between gap-2 mb-3">
                                         <div className="flex items-center gap-2">
                                             <HardDrive className="w-4 h-4" /> 自訂備選池
                                         </div>
@@ -1155,7 +1155,7 @@ export default function SettingsPage() {
                                             type="text"
                                             id="newCommandInput"
                                             placeholder="新增指令 (如 docker)"
-                                            className="flex-1 min-w-0 bg-gray-900 border border-gray-700 focus:border-blue-500 rounded px-2 py-1.5 text-xs text-gray-200 font-mono"
+                                            className="flex-1 min-w-0 bg-card border border-border focus:border-blue-500 rounded px-2 py-1.5 text-xs text-foreground font-mono"
                                             onKeyDown={(e) => {
                                                 if (e.key === 'Enter') {
                                                     const val = e.currentTarget.value.trim();
@@ -1183,7 +1183,7 @@ export default function SettingsPage() {
                                                     }
                                                 }
                                             }}
-                                            className="flex-shrink-0 whitespace-nowrap bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 border border-blue-500/50 rounded px-3 py-1.5 text-xs font-medium transition-colors"
+                                            className="flex-shrink-0 whitespace-nowrap bg-blue-600/20 hover:bg-blue-600/40 text-blue-700 dark:text-blue-400 border border-blue-500/50 rounded px-3 py-1.5 text-xs font-medium transition-colors"
                                         >
                                             新增
                                         </button>
@@ -1202,18 +1202,18 @@ export default function SettingsPage() {
                                                         e.dataTransfer.setData("text/plain", cmd);
                                                         e.dataTransfer.effectAllowed = "move";
                                                     }}
-                                                    className="px-3 py-2 bg-gray-800 border border-gray-700 text-gray-300 text-xs font-mono rounded cursor-grab active:cursor-grabbing hover:border-blue-500 shadow-sm relative group flex items-center justify-between"
+                                                    className="px-3 py-2 bg-muted border border-border text-muted-foreground text-xs font-mono rounded cursor-grab active:cursor-grabbing hover:border-blue-500 shadow-sm relative group flex items-center justify-between"
                                                 >
                                                     <span>{cmd}</span>
                                                     <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <span className="text-[10px] text-blue-400 mr-2">拖曳啟用</span>
+                                                        <span className="text-[10px] text-blue-700 dark:text-blue-400 mr-2">拖曳啟用</span>
                                                         <button
                                                             onClick={() => {
                                                                 const poolStr = config.env.CUSTOM_COMMANDS || "";
                                                                 const currentPool = poolStr.split(',').map(s => s.trim()).filter(Boolean);
                                                                 handleChangeEnv("CUSTOM_COMMANDS", currentPool.filter(c => c !== cmd).join(','));
                                                             }}
-                                                            className="text-gray-500 hover:text-red-400 p-0.5"
+                                                            className="text-muted-foreground hover:text-red-400 p-0.5"
                                                             title="刪除"
                                                         >
                                                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
@@ -1223,7 +1223,7 @@ export default function SettingsPage() {
                                             ))
                                         }
                                         {!(config.env.CUSTOM_COMMANDS || "").trim() && (
-                                            <div className="text-center py-4 border border-dashed border-gray-800 rounded text-gray-600 text-xs mt-2">
+                                            <div className="text-center py-4 border border-dashed border-border rounded text-muted-foreground text-xs mt-2">
                                                 庫存為空，請從上方新增
                                             </div>
                                         )}
@@ -1235,10 +1235,10 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Section: MULTI-GOLEM CONFIGS (golems.json) */}
-                <div className="mt-8 border-t border-gray-800/60 pt-8">
+                <div className="mt-8 border-t border-border/60 pt-8">
                     <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-                            <Users className="w-5 h-5 text-indigo-400" />
+                        <h2 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
+                            <Users className="w-5 h-5 text-indigo-700 dark:text-indigo-400" />
                             多機組態 (Multi-Golem)
                         </h2>
                         <button
@@ -1251,7 +1251,7 @@ export default function SettingsPage() {
 
                     <div className="space-y-6">
                         {config.golems.map((golem, index) => (
-                            <div key={`golem-${index}`} className="bg-gray-900/40 border border-indigo-900/30 rounded-xl p-5 shadow-sm relative group">
+                            <div key={`golem-${index}`} className="bg-card/40 border border-indigo-900/30 rounded-xl p-5 shadow-sm relative group">
                                 <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button
                                         onClick={() => removeGolem(index)}
@@ -1261,7 +1261,7 @@ export default function SettingsPage() {
                                     </button>
                                 </div>
 
-                                <h3 className="text-md font-mono text-indigo-300 mb-4 pb-2 border-b border-gray-800/50">
+                                <h3 className="text-md font-mono text-indigo-300 mb-4 pb-2 border-b border-border/50">
                                     Entity ID: {golem.id}
                                 </h3>
 
@@ -1323,8 +1323,8 @@ export default function SettingsPage() {
                         ))}
 
                         {config.golems.length === 0 && (
-                            <div className="text-center py-10 border border-dashed border-gray-800 rounded-xl">
-                                <p className="text-gray-500 font-mono">尚無多機配置 (golems.json為空)</p>
+                            <div className="text-center py-10 border border-dashed border-border rounded-xl">
+                                <p className="text-muted-foreground font-mono">尚無多機配置 (golems.json為空)</p>
                             </div>
                         )}
                     </div>

@@ -70,24 +70,24 @@ function RestartConfirmDialog({
 }) {
     return (
         <Dialog open={open} onOpenChange={isLoading ? undefined : onOpenChange}>
-            <DialogContent showCloseButton={!isLoading} className="bg-gray-900 border-gray-700 text-white max-w-sm">
+            <DialogContent showCloseButton={!isLoading} className="bg-card border-border text-foreground max-w-sm">
                 <DialogHeader>
                     <div className="w-12 h-12 rounded-xl border bg-purple-500/10 border-purple-500/20 flex items-center justify-center mb-2">
-                        <Zap className="w-5 h-5 text-purple-400" />
+                        <Zap className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                     </div>
-                    <DialogTitle className="text-white text-base">儲存人格並開啟新對話窗口？</DialogTitle>
-                    <DialogDescription className="text-gray-400 text-sm leading-relaxed">
+                    <DialogTitle className="text-foreground text-base">儲存人格並開啟新對話窗口？</DialogTitle>
+                    <DialogDescription className="text-muted-foreground text-sm leading-relaxed">
                         人格設定將寫入檔案，並重新開啟 Golem 對話窗口使新設定正式生效。
                     </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-2">
-                    <div className="flex items-start gap-2 rounded-lg bg-gray-800/60 border border-gray-700/50 px-3 py-2.5">
-                        <TriangleAlert className="w-3.5 h-3.5 text-gray-500 mt-0.5 flex-shrink-0" />
-                        <p className="text-xs text-gray-500">進行中的對話將被中斷，此動作將為 Golem 開啟全新的對話視窗。</p>
+                    <div className="flex items-start gap-2 rounded-lg bg-muted/60 border border-border/50 px-3 py-2.5">
+                        <TriangleAlert className="w-3.5 h-3.5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                        <p className="text-xs text-muted-foreground">進行中的對話將被中斷，此動作將為 Golem 開啟全新的對話視窗。</p>
                     </div>
-                    <div className="rounded-lg bg-gray-800/40 border border-gray-700/30 px-3 py-2">
-                        <p className="text-[11px] text-gray-500 mb-1 font-medium">確認後將自動執行：</p>
-                        <ol className="text-[11px] text-gray-400 space-y-0.5 list-decimal list-inside">
+                    <div className="rounded-lg bg-muted/40 border border-border/30 px-3 py-2">
+                        <p className="text-[11px] text-muted-foreground mb-1 font-medium">確認後將自動執行：</p>
+                        <ol className="text-[11px] text-muted-foreground space-y-0.5 list-decimal list-inside">
                             <li>將人格設定寫入 persona.json</li>
                             <li>重新開啟 Gemini 對話視窗</li>
                             <li>載入新的人格與歷史記憶</li>
@@ -97,12 +97,12 @@ function RestartConfirmDialog({
                 <DialogFooter className="gap-2 sm:gap-2">
                     <Button
                         variant="outline"
-                        className="flex-1 bg-transparent border-gray-800 text-gray-500 hover:bg-gray-800 hover:text-gray-300"
+                        className="flex-1 bg-transparent border-border text-muted-foreground hover:bg-muted hover:text-muted-foreground"
                         onClick={() => onOpenChange(false)}
                         disabled={isLoading}
                     >取消</Button>
                     <Button
-                        className="flex-1 bg-purple-700 hover:bg-purple-600 text-white"
+                        className="flex-1 bg-purple-600 hover:bg-purple-500 text-white"
                         onClick={onConfirm}
                         disabled={isLoading}
                     >
@@ -126,13 +126,13 @@ function RestartConfirmDialog({
 function RestartingDialog({ open }: { open: boolean }) {
     return (
         <Dialog open={open} onOpenChange={() => { }}>
-            <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-sm" showCloseButton={false}>
+            <DialogContent className="bg-card border-border text-foreground max-w-sm" showCloseButton={false}>
                 <DialogHeader>
                     <div className="w-12 h-12 rounded-xl border bg-green-500/10 border-green-500/20 flex items-center justify-center mb-2">
-                        <Check className="w-5 h-5 text-green-400" />
+                        <Check className="w-5 h-5 text-green-700 dark:text-green-400" />
                     </div>
-                    <DialogTitle className="text-white text-base">人格設定已儲存 ✅</DialogTitle>
-                    <DialogDescription className="text-gray-400 text-sm">
+                    <DialogTitle className="text-foreground text-base">人格設定已儲存 ✅</DialogTitle>
+                    <DialogDescription className="text-muted-foreground text-sm">
                         人格已更新，Golem 正在新視窗載入您的設定。頁面將在 3 秒後自動重新整理。
                     </DialogDescription>
                 </DialogHeader>
@@ -185,44 +185,44 @@ function CreatePersonaDialog({
         finally { setIsLoading(false); }
     };
 
-    const fieldCls = "w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition-all placeholder:text-gray-600";
+    const fieldCls = "w-full bg-background border border-border rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition-all placeholder:text-muted-foreground";
 
     return (
         <Dialog open={open} onOpenChange={isLoading ? undefined : handleClose}>
-            <DialogContent showCloseButton={!isLoading} className="bg-gray-900 border-gray-700 text-white max-w-lg max-h-[90vh] overflow-y-auto">
+            <DialogContent showCloseButton={!isLoading} className="bg-card border-border text-foreground max-w-lg max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <div className="w-10 h-10 rounded-xl border bg-purple-500/10 border-purple-500/20 flex items-center justify-center mb-2">
-                        <Plus className="w-5 h-5 text-purple-400" />
+                        <Plus className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                     </div>
-                    <DialogTitle className="text-white text-base">新增人格樣板</DialogTitle>
-                    <DialogDescription className="text-gray-400 text-sm">建立新的 persona .md 樣板。</DialogDescription>
+                    <DialogTitle className="text-foreground text-base">新增人格樣板</DialogTitle>
+                    <DialogDescription className="text-muted-foreground text-sm">建立新的 persona .md 樣板。</DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-4 py-2">
                     <div className="grid grid-cols-2 gap-3">
                         <div>
-                            <label className="block text-xs font-medium text-gray-400 mb-1.5">檔案 ID <span className="text-red-400">*</span></label>
+                            <label className="block text-xs font-medium text-muted-foreground mb-1.5">檔案 ID <span className="text-red-400">*</span></label>
                             <input value={id} onChange={e => setId(e.target.value)} placeholder="my_persona" className={fieldCls} />
-                            <p className="text-[10px] text-gray-600 mt-1">英數字與底線，自動轉小寫</p>
+                            <p className="text-[10px] text-muted-foreground mt-1">英數字與底線，自動轉小寫</p>
                         </div>
                         <div>
-                            <label className="block text-xs font-medium text-gray-400 mb-1.5">顯示名稱 <span className="text-red-400">*</span></label>
+                            <label className="block text-xs font-medium text-muted-foreground mb-1.5">顯示名稱 <span className="text-red-400">*</span></label>
                             <input value={name} onChange={e => setName(e.target.value)} placeholder="我的人格" className={fieldCls} />
                         </div>
                     </div>
                     <div>
-                        <label className="block text-xs font-medium text-gray-400 mb-1.5">簡短描述</label>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1.5">簡短描述</label>
                         <input value={description} onChange={e => setDescription(e.target.value)} placeholder="一句話描述這個人格的特色" className={fieldCls} />
                     </div>
                     <div>
-                        <label className="block text-xs font-medium text-gray-400 mb-1.5">圖示</label>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1.5">圖示</label>
                         <div className="flex flex-wrap gap-2">
                             {ICON_OPTIONS.map(opt => {
                                 const Ico = ICON_MAP[opt];
                                 return (
                                     <button key={opt} onClick={() => setIcon(opt)}
                                         className={cn("p-2.5 rounded-xl border transition-all",
-                                            icon === opt ? "bg-purple-500/20 border-purple-500/50 text-purple-300" : "bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-600")}
+                                            icon === opt ? "bg-purple-100 dark:bg-purple-500/20 border-purple-300 dark:border-purple-500/50 text-purple-700 dark:text-purple-300" : "bg-muted border-border text-muted-foreground hover:border-border")}
                                         title={opt}><Ico className="w-4 h-4" /></button>
                                 );
                             })}
@@ -230,26 +230,26 @@ function CreatePersonaDialog({
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                         <div>
-                            <label className="block text-xs font-medium text-gray-400 mb-1.5">AI 名稱</label>
+                            <label className="block text-xs font-medium text-muted-foreground mb-1.5">AI 名稱</label>
                             <input value={aiName} onChange={e => setAiName(e.target.value)} placeholder="Golem" className={fieldCls} />
                         </div>
                         <div>
-                            <label className="block text-xs font-medium text-gray-400 mb-1.5">使用者稱呼</label>
+                            <label className="block text-xs font-medium text-muted-foreground mb-1.5">使用者稱呼</label>
                             <input value={userName} onChange={e => setUserName(e.target.value)} placeholder="Traveler" className={fieldCls} />
                         </div>
                     </div>
                     <div>
-                        <label className="block text-xs font-medium text-gray-400 mb-1.5">任務定位 &amp; 人設背景</label>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1.5">任務定位 &amp; 人設背景</label>
                         <textarea value={role} onChange={e => setRole(e.target.value)}
                             placeholder="描述這個人格的身份背景、任務與個性..."
                             className={`${fieldCls} resize-y min-h-[90px]`} />
                     </div>
                     <div>
-                        <label className="block text-xs font-medium text-gray-400 mb-1.5">語言風格 &amp; 語氣</label>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1.5">語言風格 &amp; 語氣</label>
                         <input value={tone} onChange={e => setTone(e.target.value)} placeholder="例如：活潑幽默、直接果斷" className={fieldCls} />
                     </div>
                     <div>
-                        <label className="block text-xs font-medium text-gray-400 mb-1.5">標籤（逗號分隔）</label>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1.5">標籤（逗號分隔）</label>
                         <input value={tags} onChange={e => setTags(e.target.value)} placeholder="生產力, 助手, 專業" className={fieldCls} />
                     </div>
                     {error && (
@@ -260,9 +260,9 @@ function CreatePersonaDialog({
                 </div>
 
                 <DialogFooter className="gap-2 sm:gap-2 pt-2">
-                    <Button variant="outline" className="flex-1 bg-transparent border-gray-800 text-gray-500 hover:bg-gray-800 hover:text-gray-300"
+                    <Button variant="outline" className="flex-1 bg-transparent border-border text-muted-foreground hover:bg-muted hover:text-muted-foreground"
                         onClick={() => handleClose(false)} disabled={isLoading}>取消</Button>
-                    <Button className="flex-1 bg-purple-700 hover:bg-purple-600 text-white" onClick={handleSubmit} disabled={isLoading}>
+                    <Button className="flex-1 bg-purple-600 hover:bg-purple-500 text-white" onClick={handleSubmit} disabled={isLoading}>
                         {isLoading
                             ? <span className="flex items-center gap-1.5"><RefreshCcw className="w-3.5 h-3.5 animate-spin" />建立中...</span>
                             : <span className="flex items-center gap-1.5"><Plus className="w-3.5 h-3.5" />建立人格</span>}
@@ -283,10 +283,10 @@ function EditField({
     multiline?: boolean;
     placeholder?: string;
 }) {
-    const base = "w-full bg-gray-950 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500 transition-all placeholder:text-gray-600";
+    const base = "w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500 transition-all placeholder:text-muted-foreground";
     return (
         <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">{label}</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1.5">{label}</label>
             {multiline
                 ? <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
                     className={`${base} resize-y min-h-[100px]`} />
@@ -411,31 +411,31 @@ export default function PersonaPage() {
         return s && tg;
     });
 
-    const inputCls = "w-full bg-gray-950 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500 transition-all placeholder:text-gray-600";
+    const inputCls = "w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500 transition-all placeholder:text-muted-foreground";
 
     return (
         <>
-            <div className="flex-1 overflow-auto bg-gray-950 p-6 text-white">
+            <div className="flex-1 overflow-auto bg-background p-6 text-foreground">
                 <div className="max-w-5xl w-full mx-auto pb-12 pt-4 space-y-6">
 
                     {/* ── Page Header ─────────────────────────────────── */}
                     <div className="flex items-center gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
-                        <div className="inline-flex items-center justify-center p-3 bg-purple-950/50 border border-purple-800/50 rounded-xl shadow-[0_0_20px_-5px_rgba(168,85,247,0.4)]">
-                            <User className="w-6 h-6 text-purple-400" />
+                        <div className="inline-flex items-center justify-center p-3 bg-purple-100 dark:bg-purple-950/50 border border-purple-200 dark:border-purple-800/50 rounded-xl shadow-[0_0_20px_-5px_rgba(168,85,247,0.4)]">
+                            <User className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-purple-100 to-purple-400 tracking-tight">
+                            <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-zinc-800 via-purple-700 to-purple-500 dark:from-white dark:via-purple-100 dark:to-purple-400 tracking-tight">
                                 人格設定 (Persona)
                             </h1>
-                            <p className="text-sm text-gray-500 mt-0.5">管理 Golem 的身份、人設與語言風格</p>
+                            <p className="text-sm text-muted-foreground mt-0.5">管理 Golem 的身份、人設與語言風格</p>
                         </div>
                     </div>
 
                     {/* ── Current Persona Edit Card ────────────────────── */}
                     <div className="animate-in fade-in slide-in-from-top-2 duration-500 delay-100">
                         <div className={cn(
-                            "bg-gray-900/70 backdrop-blur-sm border rounded-2xl relative overflow-hidden transition-all duration-300",
-                            isEditing ? "border-purple-600/50 shadow-[0_0_30px_-8px_rgba(168,85,247,0.35)]" : "border-gray-800"
+                            "bg-card/70 backdrop-blur-sm border rounded-2xl relative overflow-hidden transition-all duration-300",
+                            isEditing ? "border-purple-600/50 shadow-[0_0_30px_-8px_rgba(168,85,247,0.35)]" : "border-border"
                         )}>
                             {/* Top accent bar */}
                             <div className={cn("absolute inset-x-0 top-0 h-[2px] transition-all duration-300",
@@ -448,29 +448,29 @@ export default function PersonaPage() {
                                 <div className="flex items-center gap-3">
                                     <div className={cn(
                                         "w-10 h-10 rounded-xl flex items-center justify-center transition-colors",
-                                        isEditing ? "bg-purple-900/50 border border-purple-700/40" : "bg-gray-800 border border-gray-700"
+                                        isEditing ? "bg-purple-900/50 border border-purple-700/40" : "bg-muted border border-border"
                                     )}>
-                                        <User className={cn("w-5 h-5 transition-colors", isEditing ? "text-purple-300" : "text-gray-400")} />
+                                        <User className={cn("w-5 h-5 transition-colors", isEditing ? "text-purple-700 dark:text-purple-300" : "text-muted-foreground")} />
                                     </div>
                                     <div>
-                                        <p className="text-[10px] text-gray-500 font-mono uppercase tracking-widest">目前人格</p>
-                                        <p className="text-lg font-bold text-white leading-tight">{aiName}</p>
+                                        <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-widest">目前人格</p>
+                                        <p className="text-lg font-bold text-foreground leading-tight">{aiName}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     {isDirty && !isEditing && (
-                                        <span className="text-xs text-amber-400 bg-amber-900/20 border border-amber-700/30 rounded-full px-2.5 py-1">
+                                        <span className="text-xs text-amber-700 dark:text-amber-400 bg-amber-900/20 border border-amber-700/30 rounded-full px-2.5 py-1">
                                             未儲存的變更
                                         </span>
                                     )}
                                     {isEditing ? (
                                         <button onClick={handleDiscard}
-                                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg transition-all">
+                                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground bg-muted hover:bg-accent border border-border rounded-lg transition-all">
                                             <RotateCcw className="w-3.5 h-3.5" />捨棄變更
                                         </button>
                                     ) : (
                                         <button onClick={() => setIsEditing(true)}
-                                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-purple-300 hover:text-white bg-purple-900/20 hover:bg-purple-900/40 border border-purple-700/40 rounded-lg transition-all">
+                                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-purple-700 dark:text-purple-300 hover:text-foreground bg-purple-100 dark:bg-purple-900/20 hover:bg-purple-900/40 border border-purple-700/40 rounded-lg transition-all">
                                             <Pencil className="w-3.5 h-3.5" />編輯人格
                                         </button>
                                     )}
@@ -480,17 +480,17 @@ export default function PersonaPage() {
                             {/* View Mode */}
                             {!isEditing && (
                                 <div className="px-6 pb-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <div className="bg-gray-950/60 border border-gray-800/60 rounded-xl px-4 py-3">
-                                        <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1 font-medium">稱呼你為</p>
-                                        <p className="text-sm text-gray-200">「{userName}」</p>
+                                    <div className="bg-background/60 border border-border/60 rounded-xl px-4 py-3">
+                                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1 font-medium">稱呼你為</p>
+                                        <p className="text-sm text-foreground">「{userName}」</p>
                                     </div>
-                                    <div className="bg-gray-950/60 border border-gray-800/60 rounded-xl px-4 py-3">
-                                        <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1 font-medium">語言風格</p>
-                                        <p className="text-sm text-gray-200 line-clamp-1">{tone || "—"}</p>
+                                    <div className="bg-background/60 border border-border/60 rounded-xl px-4 py-3">
+                                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1 font-medium">語言風格</p>
+                                        <p className="text-sm text-foreground line-clamp-1">{tone || "—"}</p>
                                     </div>
-                                    <div className="bg-gray-950/60 border border-gray-800/60 rounded-xl px-4 py-3 sm:col-span-2">
-                                        <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1 font-medium">任務定位 &amp; 人設背景</p>
-                                        <p className="text-sm text-gray-200 line-clamp-3">{role || "—"}</p>
+                                    <div className="bg-background/60 border border-border/60 rounded-xl px-4 py-3 sm:col-span-2">
+                                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1 font-medium">任務定位 &amp; 人設背景</p>
+                                        <p className="text-sm text-foreground line-clamp-3">{role || "—"}</p>
                                     </div>
                                 </div>
                             )}
@@ -523,14 +523,14 @@ export default function PersonaPage() {
                                         <Button
                                             onClick={() => setShowConfirm(true)}
                                             disabled={isInjecting}
-                                            className="w-full h-12 font-bold bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-500 hover:to-blue-400 border-none shadow-xl shadow-purple-900/20 transition-all hover:scale-[1.01] active:scale-95 rounded-2xl text-base"
+                                            className="w-full h-12 font-bold bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-500 hover:to-blue-400 border-none shadow-xl shadow-purple-900/20 transition-all hover:scale-[1.01] active:scale-95 rounded-2xl text-base text-white"
                                         >
                                             <span className="flex items-center gap-2">
                                                 <Zap className="w-5 h-5" />
                                                 儲存人格並開啟新對話窗口
                                             </span>
                                         </Button>
-                                        <p className="text-center text-xs text-gray-600 mt-2">
+                                        <p className="text-center text-xs text-muted-foreground mt-2">
                                             重開視窗後新設定正式生效，前端將自動重新整理
                                         </p>
                                     </div>
@@ -542,50 +542,50 @@ export default function PersonaPage() {
                     {/* ── Templates Section ────────────────────────────── */}
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200 space-y-4">
                         <div className="flex items-center justify-between">
-                            <h2 className="text-base font-semibold text-gray-300 flex items-center gap-2">
-                                <Sparkles className="w-4 h-4 text-purple-400" />
+                            <h2 className="text-base font-semibold text-muted-foreground flex items-center gap-2">
+                                <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                                 人格樣板庫
                             </h2>
                             <button
                                 onClick={() => setShowCreate(true)}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-900/30 border border-purple-700/40 text-purple-300 hover:bg-purple-900/50 text-xs font-medium rounded-lg transition-all"
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-900/30 border border-purple-700/40 text-purple-700 dark:text-purple-300 hover:bg-purple-900/50 text-xs font-medium rounded-lg transition-all"
                             >
                                 <Plus className="w-3.5 h-3.5" />新增人格
                             </button>
                         </div>
 
                         {/* Search + Tags */}
-                        <div className="bg-gray-900/40 border border-gray-800 rounded-2xl p-4">
+                        <div className="bg-card/40 border border-border rounded-2xl p-4">
                             <div className="flex gap-3 mb-4">
                                 <div className="relative flex-1">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                                     <input
                                         type="text"
                                         placeholder="搜尋樣板..."
                                         value={searchTerm}
                                         onChange={e => setSearchTerm(e.target.value)}
-                                        className="w-full bg-gray-950 border border-gray-800 rounded-xl pl-9 pr-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30 transition-all placeholder:text-gray-600"
+                                        className="w-full bg-background border border-border rounded-xl pl-9 pr-4 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-purple-500/30 transition-all placeholder:text-muted-foreground"
                                     />
                                     {searchTerm && (
                                         <button onClick={() => setSearchTerm("")} className="absolute right-3 top-1/2 -translate-y-1/2">
-                                            <X className="w-3 h-3 text-gray-500" />
+                                            <X className="w-3 h-3 text-muted-foreground" />
                                         </button>
                                     )}
                                 </div>
-                                <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                                     <Filter className="w-3.5 h-3.5" />
                                 </div>
                             </div>
                             <div className="flex flex-wrap gap-2">
                                 <button onClick={() => setSelectedTag(null)}
                                     className={cn("px-3 py-1 rounded-lg text-xs font-medium transition-all",
-                                        selectedTag === null ? "bg-purple-500 text-white" : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white")}>
+                                        selectedTag === null ? "bg-purple-600 text-white" : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground")}>
                                     全部
                                 </button>
                                 {allTags.map(tag => (
                                     <button key={tag} onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
                                         className={cn("px-3 py-1 rounded-lg text-xs font-medium transition-all flex items-center gap-1",
-                                            selectedTag === tag ? "bg-blue-500 text-white" : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white")}>
+                                            selectedTag === tag ? "bg-blue-500 text-foreground" : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground")}>
                                         <Tag className="w-3 h-3" />{tag}
                                     </button>
                                 ))}
@@ -601,40 +601,40 @@ export default function PersonaPage() {
                                     className={cn(
                                         "text-left p-4 rounded-2xl border transition-all duration-300 group relative overflow-hidden flex flex-col",
                                         activePresetId === preset.id
-                                            ? "bg-purple-950/25 border-purple-500/50 ring-1 ring-purple-500/30"
-                                            : "bg-gray-900 border-gray-800 hover:border-gray-700 hover:bg-gray-800/70"
+                                            ? "bg-purple-50 dark:bg-purple-950/25 border-purple-300 dark:border-purple-500/50 ring-1 ring-purple-500/30"
+                                            : "bg-card border-border hover:border-border hover:bg-muted/70"
                                     )}
                                 >
                                     <div className="flex items-start justify-between mb-3">
                                         <div className={cn("p-2.5 rounded-xl transition-colors",
                                             activePresetId === preset.id
                                                 ? "bg-purple-500 text-white"
-                                                : "bg-gray-800 text-gray-400 group-hover:text-purple-400")}>
+                                                : "bg-muted text-muted-foreground group-hover:text-purple-600 dark:text-purple-400")}>
                                             {(() => { const I = ICON_MAP[preset.icon] || ICON_MAP.BrainCircuit; return <I className="w-5 h-5" />; })()}
                                         </div>
                                         {activePresetId === preset.id && (
-                                            <div className="flex items-center gap-1 bg-purple-500/20 border border-purple-500/30 text-purple-300 text-[9px] font-bold px-2 py-0.5 rounded-full">
+                                            <div className="flex items-center gap-1 bg-purple-100 dark:bg-purple-500/20 border border-purple-500/30 text-purple-700 dark:text-purple-300 text-[9px] font-bold px-2 py-0.5 rounded-full">
                                                 <Check className="w-2.5 h-2.5" />套用中
                                             </div>
                                         )}
                                     </div>
                                     <h4 className={cn("font-bold mb-1 text-sm transition-colors",
-                                        activePresetId === preset.id ? "text-white" : "text-gray-200 group-hover:text-white")}>
+                                        activePresetId === preset.id ? "text-foreground" : "text-foreground group-hover:text-foreground")}>
                                         {preset.name}
                                     </h4>
-                                    <p className="text-xs text-gray-500 leading-relaxed flex-1">{preset.description}</p>
+                                    <p className="text-xs text-muted-foreground leading-relaxed flex-1">{preset.description}</p>
                                     <div className="flex flex-wrap gap-1 mt-3">
                                         {preset.tags?.map(t => (
-                                            <span key={t} className="px-1.5 py-0.5 bg-gray-950/50 border border-gray-800 text-[9px] text-gray-600 rounded">
+                                            <span key={t} className="px-1.5 py-0.5 bg-background/50 border border-border text-[9px] text-muted-foreground rounded">
                                                 #{t}
                                             </span>
                                         ))}
                                     </div>
                                 </button>
                             )) : (
-                                <div className="col-span-full py-16 text-center bg-gray-900/20 border border-dashed border-gray-800 rounded-2xl flex flex-col items-center">
-                                    <Search className="w-8 h-8 text-gray-700 mb-2" />
-                                    <p className="text-gray-500 text-sm">找不到符合條件的樣板</p>
+                                <div className="col-span-full py-16 text-center bg-card/20 border border-dashed border-border rounded-2xl flex flex-col items-center">
+                                    <Search className="w-8 h-8 text-muted-foreground mb-2" />
+                                    <p className="text-muted-foreground text-sm">找不到符合條件的樣板</p>
                                     <button onClick={() => { setSearchTerm(""); setSelectedTag(null); }}
                                         className="text-purple-500 text-xs mt-2 hover:underline">清除過濾條件</button>
                                 </div>

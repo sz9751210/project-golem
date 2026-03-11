@@ -131,26 +131,26 @@ export default function GolemSetupPage() {
 
     if (isLoadingGolems || activeGolemStatus !== 'pending_setup') {
         return (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 bg-gray-950 text-white">
-                <BrainCircuit className="w-12 h-12 text-cyan-500 animate-pulse mb-4" />
+            <div className="flex-1 flex flex-col items-center justify-center p-8 bg-background text-foreground">
+                <BrainCircuit className="w-12 h-12 text-cyan-600 dark:text-cyan-500 animate-pulse mb-4" />
                 <h2 className="text-xl font-semibold">載入核心神經網路中...</h2>
-                <p className="text-gray-400 mt-2">請稍候，系統正在準備連線。</p>
+                <p className="text-muted-foreground mt-2">請稍候，系統正在準備連線。</p>
             </div>
         );
     }
 
     return (
-        <div className="flex-1 overflow-auto bg-gray-950 p-6 flex flex-col text-white">
+        <div className="flex-1 overflow-auto bg-background p-6 flex flex-col text-foreground">
             <div className="max-w-6xl w-full mx-auto pb-12 pt-8">
                 {/* Header */}
                 <div className="flex flex-col items-center text-center mb-10 animate-in fade-in slide-in-from-top-4 duration-500">
-                    <div className="inline-flex items-center justify-center p-4 bg-cyan-950/50 border border-cyan-800/50 rounded-2xl mb-5 shadow-[0_0_30px_-5px_var(--tw-shadow-color)] shadow-cyan-900/40">
-                        <Sparkles className="w-8 h-8 text-cyan-400" />
+                    <div className="inline-flex items-center justify-center p-4 bg-cyan-100 dark:bg-cyan-950/50 border border-cyan-200 dark:border-cyan-800/50 rounded-2xl mb-5 shadow-sm dark:shadow-[0_0_30px_-5px_var(--tw-shadow-color)] dark:shadow-cyan-900/40">
+                        <Sparkles className="w-8 h-8 text-cyan-600 dark:text-cyan-400" />
                     </div>
-                    <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-br from-white via-blue-100 to-cyan-400 mb-3 tracking-tight">
+                    <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-br from-cyan-900 via-blue-800 to-cyan-700 dark:from-white dark:via-blue-100 dark:to-cyan-400 mb-3 tracking-tight">
                         初始化 Golem [{activeGolem}]
                     </h1>
-                    <p className="text-lg text-gray-400 max-w-2xl">
+                    <p className="text-lg text-muted-foreground max-w-2xl">
                         此 Golem 的大腦層尚未初始化。請在正式啟動前，賦予它專屬的人格、身分與任務模板。
                     </p>
                 </div>
@@ -160,35 +160,35 @@ export default function GolemSetupPage() {
                     <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-8 animate-in fade-in slide-in-from-left-8 duration-700 delay-150">
 
                         <div className="flex items-center gap-3 mb-2 px-2">
-                            <Settings2 className="w-6 h-6 text-cyan-400" />
-                            <h2 className="text-xl font-semibold text-white">參數定義 (Parameters)</h2>
+                            <Settings2 className="w-6 h-6 text-cyan-700 dark:text-cyan-400" />
+                            <h2 className="text-xl font-semibold text-foreground">參數定義 (Parameters)</h2>
                         </div>
 
                         {/* Section 1: Basic Info */}
-                        <div className="bg-gray-900/80 backdrop-blur-sm border border-gray-800 rounded-2xl p-6 shadow-2xl relative overflow-hidden group">
+                        <div className="bg-card/80 backdrop-blur-sm border border-border rounded-2xl p-6 shadow-2xl relative overflow-hidden group">
                             <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-600 to-cyan-400"></div>
                             <div className="space-y-5">
                                 <div>
-                                    <label htmlFor="aiName" className="block text-sm font-medium text-gray-400 mb-2">
+                                    <label htmlFor="aiName" className="block text-sm font-medium text-muted-foreground mb-2">
                                         AI 名稱
                                     </label>
                                     <input
                                         id="aiName"
                                         value={aiName}
                                         onChange={(e) => setAiName(e.target.value)}
-                                        className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500 transition-all"
+                                        className="w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500 transition-all"
                                         placeholder="例如：Friday, Golem"
                                     />
                                 </div>
                                 <div>
-                                    <label htmlFor="userName" className="block text-sm font-medium text-gray-400 mb-2">
+                                    <label htmlFor="userName" className="block text-sm font-medium text-muted-foreground mb-2">
                                         你的稱呼
                                     </label>
                                     <input
                                         id="userName"
                                         value={userName}
                                         onChange={(e) => setUserName(e.target.value)}
-                                        className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500 transition-all"
+                                        className="w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500 transition-all"
                                         placeholder="例如：Boss, Commander"
                                     />
                                 </div>
@@ -196,29 +196,29 @@ export default function GolemSetupPage() {
                         </div>
 
                         {/* Section 2: Core Persona */}
-                        <div className="bg-gray-900/80 backdrop-blur-sm border border-gray-800 rounded-2xl p-6 shadow-2xl relative overflow-hidden group">
+                        <div className="bg-card/80 backdrop-blur-sm border border-border rounded-2xl p-6 shadow-2xl relative overflow-hidden group">
                             <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-purple-500 to-blue-500"></div>
                             <div className="space-y-5">
                                 <div>
-                                    <label htmlFor="role" className="block text-sm font-medium text-gray-400 mb-2">
+                                    <label htmlFor="role" className="block text-sm font-medium text-muted-foreground mb-2">
                                         任務定位 & 人設背景
                                     </label>
                                     <textarea
                                         id="role"
                                         value={role}
                                         onChange={(e) => setRole(e.target.value)}
-                                        className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition-all resize-y min-h-[120px]"
+                                        className="w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition-all resize-y min-h-[120px]"
                                     />
                                 </div>
                                 <div>
-                                    <label htmlFor="tone" className="block text-sm font-medium text-gray-400 mb-2">
+                                    <label htmlFor="tone" className="block text-sm font-medium text-muted-foreground mb-2">
                                         語言風格 & 語氣
                                     </label>
                                     <input
                                         id="tone"
                                         value={tone}
                                         onChange={(e) => setTone(e.target.value)}
-                                        className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition-all"
+                                        className="w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition-all"
                                     />
                                 </div>
                             </div>
@@ -233,7 +233,7 @@ export default function GolemSetupPage() {
                             >
                                 {isLoading ? (
                                     <span className="flex items-center gap-2">
-                                        <div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin" />
+                                        <div className="w-5 h-5 border-3 border-border/30 border-t-white rounded-full animate-spin" />
                                         正在喚醒核心...
                                     </span>
                                 ) : (
@@ -249,27 +249,27 @@ export default function GolemSetupPage() {
                     {/* Right Column: Templates Grid & Filters */}
                     <div className="lg:col-span-7 space-y-6 animate-in fade-in slide-in-from-right-8 duration-700 delay-300">
                         {/* Search & Tags */}
-                        <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 shadow-sm">
+                        <div className="bg-card/50 border border-border rounded-2xl p-6 shadow-sm">
                             <div className="flex flex-col md:flex-row gap-4 mb-6">
                                 <div className="relative flex-1">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                                     <input
                                         type="text"
                                         placeholder="搜尋樣板名稱、關鍵字..."
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="w-full bg-gray-950 border border-gray-800 rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/30 transition-all"
+                                        className="w-full bg-background border border-border rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/30 transition-all"
                                     />
                                     {searchTerm && (
                                         <button
                                             onClick={() => setSearchTerm("")}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 hover:bg-gray-800 rounded-md"
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 hover:bg-muted rounded-md"
                                         >
-                                            <X className="w-3 h-3 text-gray-500" />
+                                            <X className="w-3 h-3 text-muted-foreground" />
                                         </button>
                                     )}
                                 </div>
-                                <div className="flex items-center gap-2 text-sm font-medium text-gray-400">
+                                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                                     <Filter className="w-4 h-4" />
                                     篩選標籤
                                 </div>
@@ -281,8 +281,8 @@ export default function GolemSetupPage() {
                                     className={cn(
                                         "px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
                                         selectedTag === null
-                                            ? "bg-cyan-500 text-white shadow-lg shadow-cyan-900/20"
-                                            : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
+                                            ? "bg-cyan-600 dark:bg-cyan-500 text-white dark:text-foreground shadow-lg dark:shadow-cyan-900/20"
+                                            : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
                                     )}
                                 >
                                     全部
@@ -294,8 +294,8 @@ export default function GolemSetupPage() {
                                         className={cn(
                                             "px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5",
                                             selectedTag === tag
-                                                ? "bg-blue-500 text-white shadow-lg shadow-blue-900/20"
-                                                : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
+                                                ? "bg-blue-600 dark:bg-blue-500 text-white dark:text-foreground shadow-lg dark:shadow-blue-900/20"
+                                                : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
                                         )}
                                     >
                                         <Tag className="w-3 h-3" />
@@ -315,14 +315,14 @@ export default function GolemSetupPage() {
                                         className={cn(
                                             "text-left p-5 rounded-2xl border transition-all duration-300 group relative overflow-hidden flex flex-col h-full",
                                             activePresetId === preset.id
-                                                ? "bg-cyan-950/20 border-cyan-500/50 ring-1 ring-cyan-500/30 shadow-[0_0_25px_-5px_var(--tw-shadow-color)] shadow-cyan-900/20"
-                                                : "bg-gray-900 border-gray-800 hover:border-gray-700 hover:bg-gray-800/80"
+                                                ? "bg-cyan-50 dark:bg-cyan-950/20 border-cyan-500 dark:border-cyan-500/50 ring-1 ring-cyan-500/30 shadow-md dark:shadow-[0_0_25px_-5px_var(--tw-shadow-color)] dark:shadow-cyan-900/20"
+                                                : "bg-card border-border hover:border-border hover:bg-muted/80"
                                         )}
                                     >
                                         <div className="flex items-start justify-between mb-4">
                                             <div className={cn(
                                                 "p-3 rounded-xl transition-colors",
-                                                activePresetId === preset.id ? "bg-cyan-500 text-white shadow-lg shadow-cyan-900/40" : "bg-gray-800 text-gray-400 group-hover:text-cyan-400"
+                                                activePresetId === preset.id ? "bg-cyan-600 dark:bg-cyan-500 text-white dark:text-foreground shadow-sm dark:shadow-lg dark:shadow-cyan-900/40" : "bg-muted text-muted-foreground group-hover:text-cyan-700 dark:text-cyan-400"
                                             )}>
                                                 {(() => {
                                                     const IconComponent = ICON_MAP[preset.icon] || ICON_MAP.BrainCircuit;
@@ -330,7 +330,7 @@ export default function GolemSetupPage() {
                                                 })()}
                                             </div>
                                             {activePresetId === preset.id && (
-                                                <div className="bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                                <div className="bg-cyan-100 dark:bg-cyan-500/20 border border-cyan-300 dark:border-cyan-500/30 text-cyan-800 dark:text-cyan-400 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
                                                     Selected
                                                 </div>
                                             )}
@@ -338,10 +338,10 @@ export default function GolemSetupPage() {
 
                                         <h4 className={cn(
                                             "text-lg font-bold mb-2 transition-colors",
-                                            activePresetId === preset.id ? "text-white" : "text-gray-200 group-hover:text-white"
+                                            activePresetId === preset.id ? "text-foreground" : "text-foreground group-hover:text-foreground"
                                         )}>{preset.name}</h4>
 
-                                        <p className="text-sm text-gray-400 leading-relaxed mb-4 flex-1">
+                                        <p className="text-sm text-muted-foreground leading-relaxed mb-4 flex-1">
                                             {preset.description}
                                         </p>
 
@@ -349,7 +349,7 @@ export default function GolemSetupPage() {
                                             {preset.tags?.map(tag => (
                                                 <span
                                                     key={tag}
-                                                    className="px-2 py-0.5 bg-gray-950/50 border border-gray-800 text-[10px] text-gray-500 rounded-md"
+                                                    className="px-2 py-0.5 bg-background/50 border border-border text-[10px] text-muted-foreground rounded-md"
                                                 >
                                                     #{tag}
                                                 </span>
@@ -369,12 +369,12 @@ export default function GolemSetupPage() {
                                     </button>
                                 ))
                             ) : (
-                                <div className="col-span-full py-20 text-center bg-gray-900/20 border border-dashed border-gray-800 rounded-2xl flex flex-col items-center">
-                                    <Search className="w-10 h-10 text-gray-700 mb-3" />
-                                    <p className="text-gray-500">找不到符合條件的樣板</p>
+                                <div className="col-span-full py-20 text-center bg-card/20 border border-dashed border-border rounded-2xl flex flex-col items-center">
+                                    <Search className="w-10 h-10 text-muted-foreground mb-3" />
+                                    <p className="text-muted-foreground">找不到符合條件的樣板</p>
                                     <button
                                         onClick={() => { setSearchTerm(""); setSelectedTag(null); }}
-                                        className="text-cyan-500 text-sm mt-2 hover:underline"
+                                        className="text-cyan-600 dark:text-cyan-500 text-sm mt-2 hover:underline"
                                     >
                                         清除所有過濾條件
                                     </button>

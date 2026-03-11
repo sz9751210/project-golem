@@ -136,13 +136,13 @@ export default function CreateGolemPage() {
     };
 
     return (
-        <div className="flex-1 overflow-auto bg-gray-950 p-6 flex flex-col text-white">
+        <div className="flex-1 overflow-auto bg-background p-6 flex flex-col text-foreground">
             <div className="max-w-2xl w-full mx-auto pb-12 pt-8">
 
                 <div className="flex items-center justify-between mb-8">
                     <Link
                         href="/dashboard"
-                        className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-300 transition-colors"
+                        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-muted-foreground transition-colors"
                     >
                         <ArrowLeft className="w-4 h-4" />
                         返回控制台
@@ -150,22 +150,22 @@ export default function CreateGolemPage() {
 
                     {/* Stepper Indicator */}
                     <div className="flex items-center gap-2 text-sm font-medium">
-                        <div className={`flex items-center justify-center w-6 h-6 rounded-full ${step >= 1 ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-500'}`}>1</div>
-                        <div className={`w-8 h-1 rounded-full ${step >= 2 ? 'bg-indigo-600' : 'bg-gray-800'}`}></div>
-                        <div className={`flex items-center justify-center w-6 h-6 rounded-full ${step >= 2 ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-500'}`}>2</div>
-                        <div className={`w-8 h-1 rounded-full ${step >= 3 ? 'bg-indigo-600' : 'bg-gray-800'}`}></div>
-                        <div className={`flex items-center justify-center w-6 h-6 rounded-full ${step >= 3 ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-500'}`}>3</div>
+                        <div className={`flex items-center justify-center w-6 h-6 rounded-full ${step >= 1 ? 'bg-indigo-600 text-foreground' : 'bg-muted text-muted-foreground'}`}>1</div>
+                        <div className={`w-8 h-1 rounded-full ${step >= 2 ? 'bg-indigo-600' : 'bg-muted'}`}></div>
+                        <div className={`flex items-center justify-center w-6 h-6 rounded-full ${step >= 2 ? 'bg-indigo-600 text-foreground' : 'bg-muted text-muted-foreground'}`}>2</div>
+                        <div className={`w-8 h-1 rounded-full ${step >= 3 ? 'bg-indigo-600' : 'bg-muted'}`}></div>
+                        <div className={`flex items-center justify-center w-6 h-6 rounded-full ${step >= 3 ? 'bg-indigo-600 text-foreground' : 'bg-muted text-muted-foreground'}`}>3</div>
                     </div>
                 </div>
 
                 <div className="flex flex-col items-center text-center mb-10 animate-in fade-in slide-in-from-top-4 duration-500">
                     <div className="inline-flex items-center justify-center p-4 bg-indigo-950/50 border border-indigo-800/50 rounded-2xl mb-5 shadow-[0_0_30px_-5px_theme(colors.indigo.900)]">
-                        <UserPlus className="w-8 h-8 text-indigo-400" />
+                        <UserPlus className="w-8 h-8 text-indigo-700 dark:text-indigo-400" />
                     </div>
                     <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-br from-white via-blue-100 to-indigo-400 mb-3 tracking-tight">
                         建立新 Golem 實體
                     </h1>
-                    <p className="text-lg text-gray-400 max-w-xl">
+                    <p className="text-lg text-muted-foreground max-w-xl">
                         {step === 1 && "第一步：為這個全新的 AI 神經網路實體命名與定位。"}
                         {step === 2 && "第二步：選擇這個 Golem 將在哪個通訊平台為您服務。"}
                         {step === 3 && "第三步：設定所選平台的連接 Token 與權限。"}
@@ -183,14 +183,14 @@ export default function CreateGolemPage() {
 
                     {/* Step 1: Identity */}
                     {step === 1 && (
-                        <div className="bg-gray-900/80 backdrop-blur-sm border border-gray-800 rounded-2xl p-6 shadow-2xl relative overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
+                        <div className="bg-card/80 backdrop-blur-sm border border-border rounded-2xl p-6 shadow-2xl relative overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
                             <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-indigo-600 to-blue-400" />
                             <div className="flex items-center gap-2 mb-5">
-                                <Hash className="w-5 h-5 text-indigo-400" />
-                                <h2 className="text-base font-semibold text-white">實體識別</h2>
+                                <Hash className="w-5 h-5 text-indigo-700 dark:text-indigo-400" />
+                                <h2 className="text-base font-semibold text-foreground">實體識別</h2>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-400 mb-2">
+                                <label className="block text-sm font-medium text-muted-foreground mb-2">
                                     Golem ID <span className="text-red-400">*</span>
                                 </label>
                                 <input
@@ -199,22 +199,22 @@ export default function CreateGolemPage() {
                                     onChange={e => setId(e.target.value)}
                                     onFocus={!isSingleNode ? suggestId : undefined}
                                     disabled={isSingleNode}
-                                    className={`w-full bg-gray-950 border ${isSingleNode ? 'border-amber-800/30 opacity-60' : 'border-gray-800 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500'} rounded-xl px-4 py-3 text-white font-mono focus:outline-none transition-all`}
+                                    className={`w-full bg-background border ${isSingleNode ? 'border-amber-800/30 opacity-60' : 'border-border focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500'} rounded-xl px-4 py-3 text-foreground font-mono focus:outline-none transition-all`}
                                     placeholder="例如：golem_A、golem_customer_service"
                                     pattern="[a-zA-Z0-9_-]+"
                                     title="只允許英文字母、數字、底線和連字號"
                                     autoFocus={!isSingleNode}
                                 />
-                                <p className="text-xs text-gray-600 mt-2">只允許英數字、底線 (_)、連字號 (-)。點擊欄位可自動建議。</p>
+                                <p className="text-xs text-muted-foreground mt-2">只允許英數字、底線 (_)、連字號 (-)。點擊欄位可自動建議。</p>
                             </div>
                             <div className="mt-4">
-                                <label className="block text-sm font-medium text-gray-400 mb-2">
-                                    任務角色說明 <span className="text-gray-600">(選填)</span>
+                                <label className="block text-sm font-medium text-muted-foreground mb-2">
+                                    任務角色說明 <span className="text-muted-foreground">(選填)</span>
                                 </label>
                                 <input
                                     value={role}
                                     onChange={e => setRole(e.target.value)}
-                                    className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all"
+                                    className="w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all"
                                     placeholder="例如：主要客服機器人、測試用開發環境"
                                 />
                             </div>
@@ -223,20 +223,20 @@ export default function CreateGolemPage() {
 
                     {/* Step 2: Choose Platforms */}
                     {step === 2 && (
-                        <div className="bg-gray-900/80 backdrop-blur-sm border border-gray-800 rounded-2xl p-6 shadow-2xl relative overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
+                        <div className="bg-card/80 backdrop-blur-sm border border-border rounded-2xl p-6 shadow-2xl relative overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
                             <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-600 to-teal-400" />
                             <div className="flex flex-col gap-4">
                                 <button
                                     type="button"
                                     onClick={() => selectPlatform('telegram')}
-                                    className={`relative flex items-center p-5 rounded-xl border-2 transition-all ${platforms.telegram ? 'bg-sky-950/40 border-sky-500' : 'bg-gray-950 border-gray-800 hover:border-gray-700'}`}
+                                    className={`relative flex items-center p-5 rounded-xl border-2 transition-all ${platforms.telegram ? 'bg-sky-950/40 border-sky-500' : 'bg-background border-border hover:border-border'}`}
                                 >
-                                    <div className={`p-3 rounded-lg mr-4 ${platforms.telegram ? 'bg-sky-500/20 text-sky-400' : 'bg-gray-800 text-gray-400'}`}>
+                                    <div className={`p-3 rounded-lg mr-4 ${platforms.telegram ? 'bg-sky-500/20 text-sky-400' : 'bg-muted text-muted-foreground'}`}>
                                         <Bot className="w-6 h-6" />
                                     </div>
                                     <div className="text-left flex-1">
-                                        <h3 className={`font-bold text-lg ${platforms.telegram ? 'text-white' : 'text-gray-300'}`}>Telegram</h3>
-                                        <p className="text-sm text-gray-500">透過 Telegram 機器人帳號與您的 Golem 互動</p>
+                                        <h3 className={`font-bold text-lg ${platforms.telegram ? 'text-foreground' : 'text-muted-foreground'}`}>Telegram</h3>
+                                        <p className="text-sm text-muted-foreground">透過 Telegram 機器人帳號與您的 Golem 互動</p>
                                     </div>
                                     {platforms.telegram && <div className="absolute right-5 text-sky-400"><CheckCircle2 className="w-6 h-6" /></div>}
                                 </button>
@@ -244,14 +244,14 @@ export default function CreateGolemPage() {
                                 <button
                                     type="button"
                                     onClick={() => selectPlatform('discord')}
-                                    className={`relative flex items-center p-5 rounded-xl border-2 transition-all ${platforms.discord ? 'bg-violet-950/40 border-violet-500' : 'bg-gray-950 border-gray-800 hover:border-gray-700'}`}
+                                    className={`relative flex items-center p-5 rounded-xl border-2 transition-all ${platforms.discord ? 'bg-violet-950/40 border-violet-500' : 'bg-background border-border hover:border-border'}`}
                                 >
-                                    <div className={`p-3 rounded-lg mr-4 ${platforms.discord ? 'bg-violet-500/20 text-violet-400' : 'bg-gray-800 text-gray-400'}`}>
+                                    <div className={`p-3 rounded-lg mr-4 ${platforms.discord ? 'bg-violet-500/20 text-violet-400' : 'bg-muted text-muted-foreground'}`}>
                                         <MessageSquare className="w-6 h-6" />
                                     </div>
                                     <div className="text-left flex-1">
-                                        <h3 className={`font-bold text-lg ${platforms.discord ? 'text-white' : 'text-gray-300'}`}>Discord</h3>
-                                        <p className="text-sm text-gray-500">在 Discord 伺服器或私訊中部署您的 Golem</p>
+                                        <h3 className={`font-bold text-lg ${platforms.discord ? 'text-foreground' : 'text-muted-foreground'}`}>Discord</h3>
+                                        <p className="text-sm text-muted-foreground">在 Discord 伺服器或私訊中部署您的 Golem</p>
                                     </div>
                                     {platforms.discord && <div className="absolute right-5 text-violet-400"><CheckCircle2 className="w-6 h-6" /></div>}
                                 </button>
@@ -263,12 +263,12 @@ export default function CreateGolemPage() {
                     {step === 3 && (
                         <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                             {platforms.telegram && (
-                                <div className="bg-gray-900/80 backdrop-blur-sm border border-gray-800 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+                                <div className="bg-card/80 backdrop-blur-sm border border-border rounded-2xl p-6 shadow-2xl relative overflow-hidden">
                                     <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-sky-600 to-blue-400" />
                                     <div className="flex items-center justify-between mb-5">
                                         <div className="flex items-center gap-2">
                                             <Bot className="w-5 h-5 text-sky-400" />
-                                            <h2 className="text-base font-semibold text-white">Telegram 設定</h2>
+                                            <h2 className="text-base font-semibold text-foreground">Telegram 設定</h2>
                                         </div>
                                         <a
                                             href="https://t.me/BotFather"
@@ -282,7 +282,7 @@ export default function CreateGolemPage() {
                                     </div>
 
                                     <div className="mb-5">
-                                        <label className="block text-sm font-medium text-gray-400 mb-2">
+                                        <label className="block text-sm font-medium text-muted-foreground mb-2">
                                             Bot Token <span className="text-red-400">*</span>
                                         </label>
                                         <div className="relative">
@@ -291,14 +291,14 @@ export default function CreateGolemPage() {
                                                 type={showTgToken ? "text" : "password"}
                                                 value={tgToken}
                                                 onChange={e => setTgToken(e.target.value)}
-                                                className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 pr-11 text-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition-all"
+                                                className="w-full bg-background border border-border rounded-xl px-4 py-3 pr-11 text-foreground font-mono text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition-all"
                                                 placeholder="123456789:ABCDefghIJKlmnOPQRstUVwxyz"
                                                 autoFocus
                                             />
                                             <button
                                                 type="button"
                                                 onClick={() => setShowTgToken(!showTgToken)}
-                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 p-1 transition-colors"
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground p-1 transition-colors"
                                             >
                                                 {showTgToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                             </button>
@@ -306,8 +306,8 @@ export default function CreateGolemPage() {
                                     </div>
 
                                     <div className="mb-5">
-                                        <label className="block text-sm font-medium text-gray-400 mb-3">
-                                            <Shield className="w-4 h-4 inline mr-1.5 text-gray-500" />
+                                        <label className="block text-sm font-medium text-muted-foreground mb-3">
+                                            <Shield className="w-4 h-4 inline mr-1.5 text-muted-foreground" />
                                             驗證模式 <span className="text-red-400">*</span>
                                         </label>
                                         <div className="grid grid-cols-2 gap-3">
@@ -318,7 +318,7 @@ export default function CreateGolemPage() {
                                                     onClick={() => setTgAuthMode(mode)}
                                                     className={`p-3 rounded-xl border text-sm font-medium transition-all text-left ${tgAuthMode === mode
                                                         ? "bg-sky-950/30 border-sky-600/50 text-sky-300"
-                                                        : "bg-gray-950 border-gray-800 text-gray-400 hover:border-gray-700"
+                                                        : "bg-background border-border text-muted-foreground hover:border-border"
                                                         }`}
                                                 >
                                                     <div className="font-bold mb-0.5">{mode}</div>
@@ -332,7 +332,7 @@ export default function CreateGolemPage() {
 
                                     {tgAuthMode === "ADMIN" ? (
                                         <div className="animate-in fade-in slide-in-from-top-2">
-                                            <label className="block text-sm font-medium text-gray-400 mb-2">
+                                            <label className="block text-sm font-medium text-muted-foreground mb-2">
                                                 Admin User ID <span className="text-red-400">*</span>
                                             </label>
                                             <input
@@ -340,14 +340,14 @@ export default function CreateGolemPage() {
                                                 type="text"
                                                 value={tgAdminId}
                                                 onChange={e => setTgAdminId(e.target.value)}
-                                                className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 text-white font-mono focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition-all"
+                                                className="w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground font-mono focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition-all"
                                                 placeholder="例如：123456789"
                                             />
-                                            <p className="text-xs text-gray-600 mt-1.5">可透過 @userinfobot 取得你的 Telegram User ID</p>
+                                            <p className="text-xs text-muted-foreground mt-1.5">可透過 @userinfobot 取得你的 Telegram User ID</p>
                                         </div>
                                     ) : (
                                         <div className="animate-in fade-in slide-in-from-top-2">
-                                            <label className="block text-sm font-medium text-gray-400 mb-2">
+                                            <label className="block text-sm font-medium text-muted-foreground mb-2">
                                                 Group Chat ID <span className="text-red-400">*</span>
                                             </label>
                                             <input
@@ -355,22 +355,22 @@ export default function CreateGolemPage() {
                                                 type="text"
                                                 value={tgChatId}
                                                 onChange={e => setTgChatId(e.target.value)}
-                                                className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 text-white font-mono focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition-all"
+                                                className="w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground font-mono focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition-all"
                                                 placeholder="例如：-100987654321"
                                             />
-                                            <p className="text-xs text-gray-600 mt-1.5">群組 Chat ID 通常為負數，可將 bot 加入群組後取得</p>
+                                            <p className="text-xs text-muted-foreground mt-1.5">群組 Chat ID 通常為負數，可將 bot 加入群組後取得</p>
                                         </div>
                                     )}
                                 </div>
                             )}
 
                             {platforms.discord && (
-                                <div className="bg-gray-900/80 backdrop-blur-sm border border-gray-800 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+                                <div className="bg-card/80 backdrop-blur-sm border border-border rounded-2xl p-6 shadow-2xl relative overflow-hidden">
                                     <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-violet-600 to-indigo-400" />
                                     <div className="flex items-center justify-between mb-5">
                                         <div className="flex items-center gap-2">
                                             <MessageSquare className="w-5 h-5 text-violet-400" />
-                                            <h2 className="text-base font-semibold text-white">Discord 設定</h2>
+                                            <h2 className="text-base font-semibold text-foreground">Discord 設定</h2>
                                         </div>
                                         <a
                                             href="https://discord.com/developers/applications"
@@ -384,7 +384,7 @@ export default function CreateGolemPage() {
                                     </div>
 
                                     <div className="mb-5">
-                                        <label className="block text-sm font-medium text-gray-400 mb-2">
+                                        <label className="block text-sm font-medium text-muted-foreground mb-2">
                                             Bot Token <span className="text-red-400">*</span>
                                         </label>
                                         <div className="relative">
@@ -393,14 +393,14 @@ export default function CreateGolemPage() {
                                                 type={showDcToken ? "text" : "password"}
                                                 value={dcToken}
                                                 onChange={e => setDcToken(e.target.value)}
-                                                className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 pr-11 text-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 transition-all"
+                                                className="w-full bg-background border border-border rounded-xl px-4 py-3 pr-11 text-foreground font-mono text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 transition-all"
                                                 placeholder="MTIzNDU2Nzg5.ABCDef... (在此貼上 Token)"
                                                 autoFocus={!platforms.telegram}
                                             />
                                             <button
                                                 type="button"
                                                 onClick={() => setShowDcToken(!showDcToken)}
-                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 p-1 transition-colors"
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground p-1 transition-colors"
                                             >
                                                 {showDcToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                             </button>
@@ -408,7 +408,7 @@ export default function CreateGolemPage() {
                                     </div>
 
                                     <div className="animate-in fade-in slide-in-from-top-2">
-                                        <label className="block text-sm font-medium text-gray-400 mb-2">
+                                        <label className="block text-sm font-medium text-muted-foreground mb-2">
                                             Admin User ID <span className="text-red-400">*</span>
                                         </label>
                                         <input
@@ -416,10 +416,10 @@ export default function CreateGolemPage() {
                                             type="text"
                                             value={dcAdminId}
                                             onChange={e => setDcAdminId(e.target.value)}
-                                            className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 text-white font-mono focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 transition-all"
+                                            className="w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground font-mono focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 transition-all"
                                             placeholder="例如：123456789012345678"
                                         />
-                                        <p className="text-xs text-gray-600 mt-1.5">開啟開發者模式後，右鍵點擊你的 Discord 帳號選擇「複製使用者 ID」</p>
+                                        <p className="text-xs text-muted-foreground mt-1.5">開啟開發者模式後，右鍵點擊你的 Discord 帳號選擇「複製使用者 ID」</p>
                                     </div>
                                 </div>
                             )}
@@ -432,7 +432,7 @@ export default function CreateGolemPage() {
                                 type="button"
                                 variant="outline"
                                 onClick={prevStep}
-                                className="h-14 px-6 text-base font-medium bg-transparent text-gray-300 border-gray-700 hover:bg-gray-800 hover:text-white rounded-xl transition-all"
+                                className="h-14 px-6 text-base font-medium bg-transparent text-muted-foreground border-border hover:bg-muted hover:text-foreground rounded-xl transition-all"
                             >
                                 <ChevronLeft className="w-5 h-5 mr-1" /> 上一步
                             </Button>
@@ -442,7 +442,7 @@ export default function CreateGolemPage() {
                             <Button
                                 type="button"
                                 onClick={nextStep}
-                                className="flex-1 h-14 text-lg font-bold bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-all"
+                                className="flex-1 h-14 text-lg font-bold bg-indigo-600 hover:bg-indigo-500 text-foreground rounded-xl transition-all"
                             >
                                 下一步 <ChevronRight className="w-5 h-5 ml-1" />
                             </Button>
@@ -454,7 +454,7 @@ export default function CreateGolemPage() {
                             >
                                 {isLoading ? (
                                     <span className="flex items-center gap-2">
-                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        <div className="w-5 h-5 border-2 border-border/30 border-t-white rounded-full animate-spin" />
                                         正在孕育新實體...
                                     </span>
                                 ) : (
