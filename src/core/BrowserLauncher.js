@@ -11,6 +11,9 @@ const { BROWSER_ARGS, LOCK_FILES, LIMITS, TIMINGS } = require('./constants');
 puppeteer.use(StealthPlugin());
 
 class BrowserLauncher {
+    // 靜態實例池，避免重複啟動相同 userDataDir 的瀏覽器
+    static _instances = new Map();
+
     /**
      * 統一入口：根據環境自動選擇連線或啟動瀏覽器
      * @param {Object} options
@@ -25,7 +28,27 @@ class BrowserLauncher {
         if (isDocker && remoteDebugPort) {
             return BrowserLauncher.connectRemote('host.docker.internal', remoteDebugPort);
         }
-        return BrowserLauncher.launchLocal(userDataDir, headless);
+        
+        // 實例化 Singleton 邏輯
+        const absolutePath = path.resolve(userDataDir);
+        if (BrowserLauncher._instances.has(absolutePath)) {
+            const existingBrowser = BrowserLauncher._instances.get(absolutePath);
+            if (existingBrowser.isConnected()) {
+                console.log(`♻️ [System] Reusing existing browser instance for: ${absolutePath}`);
+                return existingBrowser;
+            }
+            BrowserLauncher._instances.delete(absolutePath);
+        }
+
+        const browser = await BrowserLauncher.launchLocal(absolutePath, headless);
+        BrowserLauncher._instances.set(absolutePath, browser);
+        
+        // 監聽斷開事件
+        browser.once('disconnected', () => {
+            BrowserLauncher._instances.delete(absolutePath);
+        });
+
+        return browser;
     }
 
     /**
@@ -122,6 +145,23 @@ class BrowserLauncher {
             }
         });
         return cleaned;
+    }
+
+    /**
+     * 優化頁面：屏蔽圖片、字體、CSS (可選) 以提升速度
+     * @param {import('puppeteer').Page} page 
+     * @param {Object} options 
+     */
+    static async optimizePage(page, { blockImages = true, blockFonts = true, blockCSS = false } = {}) {
+        await page.setRequestInterception(true);
+        page.on('request', (req) => {
+            const type = req.resourceType();
+            if (blockImages && type === 'image') return req.abort();
+            if (blockFonts && type === 'font') return req.abort();
+            if (blockCSS && type === 'stylesheet') return req.abort();
+            req.continue();
+        });
+        console.log(`🛡️ [System] Page optimized: Blocked ${[blockImages && 'Images', blockFonts && 'Fonts', blockCSS && 'CSS'].filter(Boolean).join(', ')}`);
     }
 }
 

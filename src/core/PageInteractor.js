@@ -228,38 +228,68 @@ class PageInteractor {
     }
 
     /**
-     * 🚀 自動將 Chrome 視窗移動到螢幕最底部 (不影響使用者日常操作)
+     * 🚀 自動將 Chrome 視窗移動到螢幕邊緣 (隱身術強化版)
      */
     async _moveWindowToBottom() {
         try {
-            console.log("⚓ [PageInteractor] 正在將 Chrome 視窗自動移動至置底位置...");
+            console.log("⚓ [PageInteractor] 正在執行視窗隱身術...");
             const session = await this.page.target().createCDPSession();
             const { windowId } = await session.send('Browser.getWindowForTarget');
             
             const screen = await this.page.evaluate(() => ({
-                width: window.screen.availWidth,
-                height: window.screen.availHeight
+                width: window.screen.availWidth || 1920,
+                height: window.screen.availHeight || 1080
             }));
             
-            const windowWidth = 50;
-            const windowHeight = 50;
-
-            // 將視窗移動到螢幕垂直座標之外 (隱身術)
+            // 將視窗縮到最小且移出可視區域
             await session.send('Browser.setWindowBounds', {
                 windowId,
                 bounds: {
-                    left: 0,
-                    top: screen.height + 1000,
-                    width: windowWidth,
-                    height: windowHeight,
+                    left: screen.width + 100, // 移出右側
+                    top: screen.height + 100, // 移出下側
+                    width: 100,
+                    height: 100,
                     windowState: 'normal'
                 }
             });
             await session.detach();
-            console.log("✅ [PageInteractor] 視窗已成功移至螢幕外 (隱藏)。");
         } catch (e) {
-            console.warn(`⚠️ [PageInteractor] 視窗移動失敗: ${e.message}`);
+            // 忽略非致命錯誤 (如 Docker 環境不支援視窗操作)
         }
+    }
+
+    /**
+     * ✨ [新增] 嘗試執行「新對話」而不重整頁面
+     */
+    async newChat() {
+        console.log("🆕 [PageInteractor] 嘗試執行「新對話」優化路徑...");
+        try {
+            // 1. 嘗試尋找並點擊新對話按鈕 (常見 selector)
+            const success = await this.page.evaluate(() => {
+                const selectors = [
+                    'a[href="/app"]', 
+                    'button[aria-label*="新對話"]', 
+                    'button[aria-label*="New chat"]',
+                    '.new-chat-button'
+                ];
+                for (const s of selectors) {
+                    const el = document.querySelector(s);
+                    if (el && el.offsetHeight > 0) {
+                        el.click();
+                        return true;
+                    }
+                }
+                return false;
+            });
+
+            if (success) {
+                await new Promise(r => setTimeout(r, 1000));
+                return true;
+            }
+        } catch (e) {
+            console.warn(`⚠️ [PageInteractor] 優化路徑失敗: ${e.message}`);
+        }
+        return false;
     }
 
     /**

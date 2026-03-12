@@ -30,8 +30,19 @@ const BROWSER_ARGS = Object.freeze([
     '--no-sandbox',
     '--disable-dev-shm-usage',
     '--disable-setuid-sandbox',
-    '--window-size=50,50',
+    '--window-size=1280,720', // 標準尺寸有助於元素定位穩定
     '--disable-gpu',
+    '--disable-features=Translate',
+    '--disable-notifications',
+    '--disable-background-timer-throttling',
+    '--disable-backgrounding-occluded-windows',
+    '--disable-breakpad',
+    '--disable-component-extensions-with-background-pages',
+    '--disable-extensions',
+    '--mute-audio',
+    '--no-default-browser-check',
+    '--password-store=basic', // 避免提示密碼儲存
+    '--use-mock-keychain',     // MacOS 避免存取系統 KeyChain 彈窗
 ]);
 
 /** Chrome Lock 檔案名稱 */

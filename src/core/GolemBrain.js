@@ -77,6 +77,15 @@ class GolemBrain {
             const pages = await this.browser.pages();
             this.page = pages.length > 0 ? pages[0] : await this.browser.newPage();
             console.log(`🚀 [System] Browser Session Started (Golem: ${this.golemId})`);
+
+            // ⚡ [優化] 啟動資源攔截 (屏蔽圖片與字體可加速 30%+)
+            if (process.env.GOLEM_OPTIMIZE_PAGE !== 'false') {
+                await BrowserLauncher.optimizePage(this.page, {
+                    blockImages: process.env.GOLEM_BLOCK_IMAGES !== 'false',
+                    blockFonts: process.env.GOLEM_BLOCK_FONTS !== 'false'
+                });
+            }
+
             await this.page.goto(URLS.GEMINI_APP, { waitUntil: 'networkidle2' });
             isNewSession = true;
         }
@@ -377,7 +386,14 @@ class GolemBrain {
         // 5. 重新開啟 Gemini 視窗 (New Chat) 後再注入
         console.log(`🔄 [Brain][${this.golemId}] 正在開啟新的 Gemini 對話視窗...`);
         const { URLS } = require('./constants');
-        await this.page.goto(URLS.GEMINI_APP, { waitUntil: 'networkidle2' });
+        
+        const interactor = new PageInteractor(this.page, this.doctor);
+        const navSuccess = await interactor.newChat();
+        
+        if (!navSuccess) {
+            console.log(`⚠️ [Brain][${this.golemId}] 無法使用優化路徑，執行 full reload...`);
+            await this.page.goto(URLS.GEMINI_APP, { waitUntil: 'networkidle2' });
+        }
 
         await this._injectSystemPrompt(true);
         console.log(`✅ [Brain][${this.golemId}] 完整重啟流程執行完畢 (Config + Skill + Protocol)。`);
