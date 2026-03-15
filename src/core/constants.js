@@ -51,6 +51,8 @@ const MEMORY_TIERS = Object.freeze({
     YEARLY_SUMMARY_CHARS: 5000,
     // Tier 4: 紀元里程碑 (永久)
     ERA_SUMMARY_CHARS: 8000,
+    // 🍕 分治法門檻 (字元數)
+    CHUNK_THRESHOLD: 15000, 
 });
 
 /** 日誌保留時間 (毫秒) - 向下相容 */

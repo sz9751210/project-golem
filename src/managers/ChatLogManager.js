@@ -233,10 +233,10 @@ class ChatLogManager {
         const totalChars = combinedContent.length;
         const totalLines = combinedContent.split('\n').length - 1;
 
-        console.log(`🤖 [LogManager] 檔案數(${files.length}) 達標，待壓縮對話計 ${totalLines} 條，總字數計 ${totalChars}。請求 Gemini 進行每日摘要壓縮...`);
-        const prompt = `【系統指令：對話回顧與壓縮】\n以下是 ${dateString} 多個時段內的對話記錄。請將這些內容整理成約 ${MEMORY_TIERS.DAILY_SUMMARY_CHARS} 字的精煉摘要，保留所有重要的決策、任務進度、技術細節與核心重點，並以條列式優雅地呈現。\n\n對話內容：\n${combinedContent}`;
+        console.log(`🤖 [LogManager] 檔案數(${files.length}) 達標，待壓縮對話計 ${totalLines} 條，總字數計 ${totalChars}。執行層級壓縮...`);
+        const promptTemplate = `【系統指令：對話回顧與壓縮】\n以下是 ${dateString} 的對話記錄。請將內容整理成精煉摘要，保留重要決策與核心重點。\n\n對話內容：\n{{CONTENT}}`;
 
-        await this._compressAndSave(prompt, summaryPath, dateString, 'daily_summary', files, this.dirs.hourly, brain, totalChars);
+        await this.hierarchicalCompress(combinedContent, promptTemplate, MEMORY_TIERS.DAILY_SUMMARY_CHARS, summaryPath, dateString, 'daily_summary', files, this.dirs.hourly, brain);
     }
 
     // ============================================================
@@ -277,12 +277,10 @@ class ChatLogManager {
         if (!combinedContent) return;
 
         const totalChars = combinedContent.length;
-        const totalLines = combinedContent.split('\n').filter(l => l.includes('--- [')).length;
+        console.log(`🤖 [LogManager] 每日摘要數(${files.length}) 達標，待壓縮內容計 ${totalChars} 字。執行層級壓縮...`);
+        const promptTemplate = `【系統指令：月度記憶壓縮】\n以下是 ${monthString} 的每日對話摘要。請將其整合為月度精華報告，保留重大里程碑與技術進展。\n\n摘要內容：\n{{CONTENT}}`;
 
-        console.log(`🤖 [LogManager] 每日摘要數(${files.length}) 達標，待壓縮內容計 ${totalChars} 字。請求 Gemini 進行月度精華壓縮...`);
-        const prompt = `【系統指令：月度記憶壓縮】\n以下是 ${monthString} 一整個月的每日對話摘要，共 ${files.length} 天。請將這些內容整合為約 ${MEMORY_TIERS.MONTHLY_SUMMARY_CHARS} 字的月度精華報告。\n\n重點保留：\n- 該月的主要里程碑與重大決策\n- 技術進展與架構變更\n- 使用者偏好與行為模式的變化\n- 尚未完成的待辦事項\n\n每日摘要：\n${combinedContent}`;
-
-        await this._compressAndSave(prompt, outputPath, monthString, 'monthly_summary', files, this.dirs.daily, brain, totalChars);
+        await this.hierarchicalCompress(combinedContent, promptTemplate, MEMORY_TIERS.MONTHLY_SUMMARY_CHARS, outputPath, monthString, 'monthly_summary', files, this.dirs.daily, brain);
     }
 
     // ============================================================
@@ -322,10 +320,11 @@ class ChatLogManager {
 
         if (!combinedContent) return;
 
-        const prompt = `【系統指令：年度記憶壓縮】\n以下是 ${yearString} 年一整年的月度精華摘要，共 ${files.length} 個月。請將這些內容整合為約 ${MEMORY_TIERS.YEARLY_SUMMARY_CHARS} 字的年度回顧報告。\n\n重點保留：\n- 年度重大事件與里程碑\n- 長期目標的演進與成果\n- 核心人際關係與偏好變化\n- 重大技術決策與架構演進\n\n月度摘要：\n${combinedContent}`;
+        const totalChars = combinedContent.length;
+        const promptTemplate = `【系統指令：年度記憶壓縮】\n以下是 ${yearString} 的月度精華摘要。請將其整合為年度回顧報告。\n\n月度摘要：\n{{CONTENT}}`;
 
-        // 年度摘要不刪除源檔案 (月度摘要有自己的過期機制)
-        await this._compressAndSave(prompt, outputPath, yearString, 'yearly_summary', null, null, brain);
+        // 年度摘要不刪除源檔案
+        await this.hierarchicalCompress(combinedContent, promptTemplate, MEMORY_TIERS.YEARLY_SUMMARY_CHARS, outputPath, yearString, 'yearly_summary', null, null, brain);
     }
 
     // ============================================================
@@ -372,10 +371,109 @@ class ChatLogManager {
 
         if (!combinedContent) return;
 
-        const prompt = `【系統指令：紀元記憶壓縮】\n以下是 ${startYear}~${endYear} 十年間的年度回顧摘要，共 ${files.length} 年。請將這些內容整合為約 ${MEMORY_TIERS.ERA_SUMMARY_CHARS} 字的紀元里程碑。\n\n重點保留：\n- 這十年中最重大的人生事件\n- 核心價值觀與世界觀的演變\n- 最重要的人際關係和技術成就\n- 人格特質與興趣愛好的長期變化\n\n年度摘要：\n${combinedContent}`;
+        const totalChars = combinedContent.length;
+        const promptTemplate = `【系統指令：紀元記憶壓縮】\n以下是 ${decadeString} 的年度回顧摘要。請將其整合為紀元里程碑。\n\n年度摘要：\n{{CONTENT}}`;
 
-        // 紀元摘要不刪除年度源檔案 (永久保留)
-        await this._compressAndSave(prompt, outputPath, decadeString, 'era_summary', null, null, brain);
+        // 紀元摘要不刪除年度源檔案
+        await this.hierarchicalCompress(combinedContent, promptTemplate, MEMORY_TIERS.ERA_SUMMARY_CHARS, outputPath, decadeString, 'era_summary', null, null, brain);
+    }
+
+    // ============================================================
+    // 🏛️ 分治法核心 (Divide and Conquer)
+    // ============================================================
+
+    /**
+     * 核心壓縮進入點：具備分段壓縮與多級彙整能力
+     */
+    async hierarchicalCompress(content, promptTemplate, targetChars, outputPath, label, type, sourceFiles, sourceDir, brain) {
+        const threshold = MEMORY_TIERS.CHUNK_THRESHOLD || 15000;
+        
+        if (content.length <= threshold) {
+            const prompt = promptTemplate.replace('{{CONTENT}}', content) + `\n請輸出約 ${targetChars} 字。`;
+            return await this._compressAndSave(prompt, outputPath, label, type, sourceFiles, sourceDir, brain, content.length);
+        }
+
+        console.log(`🍕 [Divide] 偵測到超長文本 (${content.length} 字)，啟動分治壓縮程序...`);
+        const chunks = this._splitIntoChunks(content, threshold);
+        console.log(`🍕 [Divide] 已切割為 ${chunks.length} 個區塊。進行初步摘要...`);
+
+        const partialSummaries = [];
+        for (let i = 0; i < chunks.length; i++) {
+            const chunkPrompt = `【分段摘要 (${i + 1}/${chunks.length})】\n請將以下對話段落進行初步壓縮，保留所有核心細節、人物、技術專有名詞與決策點，供下一階段彙總使用：\n\n${chunks[i]}`;
+            const summary = await this._getRawSummary(chunkPrompt, brain);
+            if (summary) partialSummaries.push(summary);
+        }
+
+        const consolidatedContent = partialSummaries.join('\n\n--- [分段界線] ---\n\n');
+        console.log(`🍕 [Conquer] 初步摘要彙整完成，原始內容計 ${content.length} 字 -> 彙整內容計 ${consolidatedContent.length} 字。進行最終壓縮...`);
+
+        const finalPrompt = promptTemplate.replace('{{CONTENT}}', consolidatedContent) + `\n這是經過初步分段壓縮後的內容，請將其彙整為最終的約 ${targetChars} 字報告。`;
+        return await this._compressAndSave(finalPrompt, outputPath, label, type, sourceFiles, sourceDir, brain, content.length);
+    }
+
+    /**
+     * 文字切割核心：深度校準斷點是否包含完整 JSON 或結構化區塊
+     * 確保切分時不發生「斷頭 JSON」，若不完整則優先擷取至當前區塊直到閉合。
+     */
+    _splitIntoChunks(text, maxLength) {
+        const lines = text.split('\n');
+        const chunks = [];
+        let currentChunk = "";
+        
+        let braceBalance = 0;   // { }
+        let bracketBalance = 0; // [ ]
+        let inCodeBlock = false; // ```
+
+        for (const line of lines) {
+            // 💡 狀態更新：檢查程式碼區塊
+            if (line.trim().startsWith('```')) {
+                inCodeBlock = !inCodeBlock;
+            }
+
+            // 💡 狀態更新：計算括號平衡 (排除字串內的括號可能較複雜，這裡採實用的行層級統計)
+            const openBraces = (line.match(/\{/g) || []).length;
+            const closeBraces = (line.match(/\}/g) || []).length;
+            const openBrackets = (line.match(/\[/g) || []).length;
+            const closeBrackets = (line.match(/\]/g) || []).length;
+
+            // 判斷目前是否處於「安全切分點」：
+            // 1. 不在 Markdown 程式碼區塊內
+            // 2. 所有 JSON 括號(大/中)皆已閉合
+            const isSafeToSplit = !inCodeBlock && braceBalance === 0 && bracketBalance === 0;
+
+            // 如果達到字數限制，且目前是安全切分點
+            if ((currentChunk.length + line.length + 1) > maxLength && currentChunk.length > 0 && isSafeToSplit) {
+                chunks.push(currentChunk);
+                currentChunk = "";
+            }
+
+            currentChunk += (currentChunk === "" ? "" : "\n") + line;
+            
+            // 更新平衡計數
+            braceBalance += (openBraces - closeBraces);
+            bracketBalance += (openBrackets - closeBrackets);
+
+            // 深度防呆：若平衡值變為負數 (語法錯誤)，強制重置為 0 以免永遠無法切分
+            if (braceBalance < 0) braceBalance = 0;
+            if (bracketBalance < 0) bracketBalance = 0;
+        }
+
+        if (currentChunk) chunks.push(currentChunk);
+        return chunks;
+    }
+
+    /**
+     * 靜默獲取摘要 (不寫入檔案，僅回傳文字)
+     */
+    async _getRawSummary(prompt, brain) {
+        try {
+            const rawResponse = await brain.sendMessage(prompt, false);
+            const parsed = ResponseParser.parse(rawResponse);
+            return parsed.reply || "";
+        } catch (e) {
+            console.error(`❌ [LogManager] 分段摘要獲取失敗: ${e.message}`);
+            return "";
+        }
     }
 
     // ============================================================
