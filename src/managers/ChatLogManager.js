@@ -389,13 +389,14 @@ class ChatLogManager {
         const threshold = MEMORY_TIERS.CHUNK_THRESHOLD || 15000;
         
         if (content.length <= threshold) {
+            console.log(`ℹ️ [LogManager] 文本長度 (${content.length}) 未達分段門檻 (${threshold})，執行一條龍壓縮。`);
             const prompt = promptTemplate.replace('{{CONTENT}}', content) + `\n請輸出約 ${targetChars} 字。`;
             return await this._compressAndSave(prompt, outputPath, label, type, sourceFiles, sourceDir, brain, content.length);
         }
 
-        console.log(`🍕 [Divide] 偵測到超長文本 (${content.length} 字)，啟動分治壓縮程序...`);
+        console.log(`🍕 [Divide] 偵測到超長文本 (${content.length} > ${threshold} 字)，啟動分治壓縮程序...`);
         const chunks = this._splitIntoChunks(content, threshold);
-        console.log(`🍕 [Divide] 已切割為 ${chunks.length} 個區塊。進行初步摘要...`);
+        console.log(`🍕 [Divide] 已完成結構感知切分，共分為 ${chunks.length} 個區塊。進行分段摘要...`);
 
         const partialSummaries = [];
         for (let i = 0; i < chunks.length; i++) {
@@ -441,10 +442,15 @@ class ChatLogManager {
             // 2. 所有 JSON 括號(大/中)皆已閉合
             const isSafeToSplit = !inCodeBlock && braceBalance === 0 && bracketBalance === 0;
 
-            // 如果達到字數限制，且目前是安全切分點
-            if ((currentChunk.length + line.length + 1) > maxLength && currentChunk.length > 0 && isSafeToSplit) {
-                chunks.push(currentChunk);
-                currentChunk = "";
+            // 如果達到字數限制
+            if ((currentChunk.length + line.length + 1) > maxLength && currentChunk.length > 0) {
+                if (isSafeToSplit) {
+                    chunks.push(currentChunk);
+                    currentChunk = "";
+                } else {
+                    // 找到了邊界但沒閉合，紀錄一次 debug 訊息
+                    console.log(`🔍 [LogManager] 偵測到結構未閉合 (JSON:{${braceBalance}}, [${bracketBalance}], Code:${inCodeBlock})，擴展切分區間直到閉合...`);
+                }
             }
 
             currentChunk += (currentChunk === "" ? "" : "\n") + line;
