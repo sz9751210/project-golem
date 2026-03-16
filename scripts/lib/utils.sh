@@ -43,9 +43,11 @@ update_env() {
     val=$(echo "$val" | sed -e 's/[\/&]/\\&/g')
 
     if grep -q "^$key=" "$DOT_ENV_PATH"; then
+        # 🧪 Cross-platform sed handling (Darwin vs GNU/Windows)
         if [[ "$OSTYPE" == "darwin"* ]]; then
             sed -i '' "s|^$key=.*|$key=$val|" "$DOT_ENV_PATH"
         else
+            # Linux and Windows (Git Bash/MSYS) usually use GNU sed
             sed -i "s|^$key=.*|$key=$val|" "$DOT_ENV_PATH"
         fi
     else

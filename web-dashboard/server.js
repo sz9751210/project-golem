@@ -55,7 +55,7 @@ class WebServer {
         // Security & Cleanup Middleware
         this.app.use((req, res, next) => {
             // Set a sensible CSP to avoid Chrome defaults blocking things during redirects
-            res.setHeader('Content-Security-Policy', "default-src 'self'; connect-src 'self' ws: wss:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;");
+            res.setHeader('Content-Security-Policy', "default-src 'self'; connect-src 'self' ws: wss: http://localhost:* http://127.0.0.1:* ws://localhost:* ws://127.0.0.1:*; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: http://localhost:* http://127.0.0.1:*;");
             next();
         });
 

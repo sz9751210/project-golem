@@ -140,7 +140,20 @@ show_help() {
     echo ""
 }
 
+ensure_dev_mode() {
+    # 讀取當前設定
+    [ -f "$DOT_ENV_PATH" ] && source "$DOT_ENV_PATH" 2>/dev/null
+    if [ "${DASHBOARD_DEV_MODE:-false}" != "true" ]; then
+        echo -e "  ${YELLOW}🔄 檢測到目前為生產模式，正在自動切換回開發模式...${NC}"
+        update_env "DASHBOARD_DEV_MODE" "true"
+        export DASHBOARD_DEV_MODE="true"
+        echo -e "  ${GREEN}✅ 環境已修正為 DASHBOARD_DEV_MODE=true${NC}"
+        sleep 1
+    fi
+}
+
 show_dev_menu() {
+    ensure_dev_mode
     check_status
     clear; echo ""
     box_header_dashboard
@@ -204,6 +217,11 @@ show_dev_menu() {
         *)         show_dev_menu ;;
     esac
 }
+
+case "${1:-}" in
+    --test|--test-sec|--dev|--build|--setup|--logs)
+        ensure_dev_mode ;;
+esac
 
 case "${1:-}" in
     --test)
