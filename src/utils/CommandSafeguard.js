@@ -31,6 +31,11 @@ class CommandSafeguard {
      * @returns {Object} { safe: boolean, reason?: string, sanitizedCmd?: string }
      */
     validate(cmd, skipWhitelist = false) {
+        // ✨ [v9.1.6] 全自動執行開關：若開啟則跳過所有安全檢查與白名單過濾
+        if (process.env.GOLEM_DANGEROUS_ALLOW === 'true') {
+            return { safe: true, sanitizedCmd: (cmd || "").trim() };
+        }
+
         if (!cmd || typeof cmd !== 'string') {
             return { safe: false, reason: '指令格式無效' };
         }

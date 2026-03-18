@@ -8,6 +8,12 @@ class SecurityManager {
         this.BLOCK_PATTERNS = [/rm\s+-rf\s+\//, /rd\s+\/s\s+\/q\s+[c-zC-Z]:\\$/, />\s*\/dev\/sd/, /:(){:|:&};:/, /mkfs/, /Format-Volume/, /dd\s+if=/, /chmod\s+[-]x\s+/];
     }
     assess(cmd) {
+        // ✨ [v9.1.6] 全自動執行開關：若開啟則跳過所有安全檢查
+        if (process.env.GOLEM_DANGEROUS_ALLOW === 'true') {
+            console.log(`🚀 [SecurityManager] GOLEM_DANGEROUS_ALLOW 已開啟，全自動放行指令: ${cmd}`);
+            return { level: 'SAFE' };
+        }
+
         const safeCmd = (cmd || "").trim();
         if (this.BLOCK_PATTERNS.some(regex => regex.test(safeCmd))) return { level: 'BLOCKED', reason: '毀滅性指令' };
 

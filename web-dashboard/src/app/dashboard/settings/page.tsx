@@ -1044,6 +1044,14 @@ export default function SettingsPage() {
                                     value={config.env.GOLEM_STRICT_SAFEGUARD || ""}
                                     onChange={(val) => handleChangeEnv("GOLEM_STRICT_SAFEGUARD", val)}
                                 />
+                                <SettingField
+                                    label="全自動執行開關 (Dangerous Allow)"
+                                    keyName="GOLEM_DANGEROUS_ALLOW"
+                                    placeholder="false"
+                                    desc="⚠️ 極度危險：若設為 true，Golem 將繞過所有安全審核，直接執行包含 sudo, rm -rf 在內的所有指令。"
+                                    value={config.env.GOLEM_DANGEROUS_ALLOW || ""}
+                                    onChange={(val) => handleChangeEnv("GOLEM_DANGEROUS_ALLOW", val)}
+                                />
                         </div>
 
                         {/* Whitelist Settings */}
@@ -1266,7 +1274,7 @@ export default function SettingsPage() {
                                                 'GOLEM_AWAKE_INTERVAL_MIN', 'GOLEM_AWAKE_INTERVAL_MAX',
                                                 'GOLEM_SLEEP_START', 'GOLEM_SLEEP_END', 'USER_INTERESTS', 'COMMAND_WHITELIST', 'CUSTOM_COMMANDS',
                                                 'ENABLE_LOG_NOTIFICATIONS', 'ARCHIVE_CHECK_INTERVAL', 'ARCHIVE_THRESHOLD_YESTERDAY', 'ARCHIVE_THRESHOLD_TODAY',
-                                                'LOG_MAX_SIZE_MB', 'LOG_RETENTION_DAYS', 'ENABLE_SYSTEM_LOG', 'GOLEM_BACKEND', 'GOLEM_STRICT_SAFEGUARD'
+                                                'LOG_MAX_SIZE_MB', 'LOG_RETENTION_DAYS', 'ENABLE_SYSTEM_LOG', 'GOLEM_BACKEND', 'GOLEM_STRICT_SAFEGUARD', 'GOLEM_DANGEROUS_ALLOW'
                                             ].includes(k))
                                             .map(key => (
                                                 <div key={key} className="bg-secondary/20 p-2 rounded border border-border/40">
